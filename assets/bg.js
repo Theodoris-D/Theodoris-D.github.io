@@ -1,7 +1,7 @@
-/* Kryptos background: the sea as a topographic plate, contour lines of a slow
-   swell seen in perspective (after the statue's contour variant), the real sky
-   above Munich at this moment (921 stars brighter than magnitude 4.5, facing
-   south, the horizon on the terrain line), and two thin orbits ornamented like
+/* Kryptos background: a still mountain range drawn as a point cloud along the
+   bottom of the page (nearer ridges hide farther ones), the real sky above
+   Munich at this moment (921 stars brighter than magnitude 4.5, facing south,
+   the horizon on the mountains' foot), and two thin orbits ornamented like
    an astrolabe, with one verdigris point travelling along them and the Moon in
    its real phase on the rim.
    Very low contrast; paused when the tab is hidden; drawn once, still, when
@@ -25,7 +25,7 @@
   function computeSky(ms) {
     var d = julian(ms) - 2451545.0;
     var lst = ((280.46061837 + 360.98564736629 * d + LON) % 360 + 360) % 360;
-    var out = [], horizon = H * 0.56;
+    var out = [], horizon = H * HORIZON;
     for (var i = 0; i < STARS.length; i += 3) {
       var ra = STARS[i], dec = STARS[i + 1] * Math.PI / 180, mag = STARS[i + 2];
       var ha = (lst - ra) * Math.PI / 180;
@@ -48,9 +48,11 @@
     c.width = W * dpr; c.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     sky = computeSky(Date.now()); skyAt = Date.now();
+    peaks = buildMountains();
   }
 
-  // Dunes: smooth value noise (3 octaves) drifting slowly, like sand in wind.
+  // Mountains: ridged value noise (sharp crests), taller towards the back.
+  var HORIZON = 0.9, peaks = [];
   function hash(ix, iz) { var h = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453; return h - Math.floor(h); }
   function vnoise(x, z) {
     var ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
@@ -58,14 +60,42 @@
     var a = hash(ix, iz), b = hash(ix + 1, iz), c = hash(ix, iz + 1), d = hash(ix + 1, iz + 1);
     return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
   }
-  function surface(x, z, t) {
-    var w = t * 0.00005;
-    var warp = 0.9 * (vnoise(x * 0.7 + 11.1, z * 0.6 + w * 0.6) - 0.5);       // bends the swell
-    return 0.17 * Math.sin(z * 3.1 - t * 0.00022 + x * 0.45 + warp * 2.6)    // long swell coming in
-         + 0.20 * (vnoise(x * 1.5 + w, z * 1.3 - w * 0.4) - 0.5)
-         + 0.07 * (vnoise(x * 3.8 - w * 1.5, z * 3.2 + 5.7) - 0.5);
+  function ridged(x, z) {
+    var sum = 0, amp = 0.55, fr = 1;
+    for (var o = 0; o < 4; o++) {
+      var n = 1 - Math.abs(vnoise(x * fr + 17.3 * o, z * fr - 4.1 * o) * 2 - 1);
+      sum += n * n * amp; amp *= 0.5; fr *= 2.03;
+    }
+    return sum;                                   // ~0 .. 1
   }
-
+  function buildMountains() {
+    // grid of points, drawn near to far; a point is kept only if it rises above
+    // every nearer point in its screen column, so ridges hide what is behind
+    var out = [], NX = 170, NZ = 70, horizon = H * HORIZON, cam = 0.62;
+    var f = Math.min(W, H * 1.6) * 0.55, kx = f * 1.5, ky = f * 0.62;
+    var occl = new Float32Array(Math.ceil(W / 2) + 2).fill(H + 10);
+    for (var j = 0; j < NZ; j++) {
+      var z = 1 + j * 0.085;                       // depth 1 .. ~6.9
+      var back = Math.min(1, Math.max(0, (z - 1.6) / 4.2));
+      var amp = 0.2 + 2.4 * back * back;          // foothills in front, peaks at the back
+      var fade = 1 - j / NZ;
+      for (var i = 0; i < NX; i++) {
+        var x = -3.2 + i * (6.4 / NX) + (j % 2) * (3.2 / NX);
+        var sx = W / 2 + (x / z) * kx;
+        if (sx < -4 || sx > W + 4) continue;
+        var r = ridged(x * 0.55, z * 0.55);
+        var y = r * amp;
+        var sy = horizon + ((cam - y) / z) * ky;
+        var col = Math.max(0, Math.min(occl.length - 1, Math.round(sx / 2)));
+        if (sy >= occl[col] - 0.5) continue;      // hidden behind a nearer ridge
+        occl[col] = sy;
+        var snow = Math.min(1, r * 1.4);            // crests a little brighter
+        var a = 0.08 + 0.2 * fade * fade + 0.24 * snow * (0.4 + 0.6 * back);
+        out.push(sx, sy, Math.min(0.5, a), fade > 0.6 ? 1.5 : 1, (i * 0.61 + j * 1.7) % 6.28);
+      }
+    }
+    return out;
+  }
 
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
@@ -81,64 +111,11 @@
       ctx.fillRect(st[0], st[1], sz, sz);
     }
 
-    // the sea as a topographic plate: contour lines of a slowly moving swell,
-    // found with marching squares on a grid laid out evenly on screen
-    // (columns every ~14 px, rows at even steps of 1/z), then drawn in
-    // perspective. Every fifth level is an index contour in the accent.
-    var horizon = H * 0.56, cam = 0.62, f = Math.min(W, H * 1.6) * 0.55;
-    var kx = f * 1.5, ky = f * 0.62;
-    var GX = Math.max(48, Math.round(W / 11)), GZ = 60;
-    var zs = new Float32Array(GZ), hs = new Float32Array(GX * GZ);
-    for (var j = 0; j < GZ; j++) {
-      zs[j] = 1 / (1 - j / (GZ - 1) * (1 - 1 / 6.4));
-      for (var i = 0; i < GX; i++) {
-        var xw = ((i / (GX - 1)) * W * 1.1 - W * 0.05 - W / 2) * zs[j] / kx;
-        hs[j * GX + i] = surface(xw, zs[j], t);
-      }
-    }
-    var BANDS = 4, LEVELS = [];
-    for (var L = -0.36; L <= 0.361; L += 0.024) LEVELS.push(L);
-    var paths = [];                                  // paths[band][level] -> flat list of segments
-    for (var bnd = 0; bnd < BANDS; bnd++) { paths.push([]); for (var q = 0; q < LEVELS.length; q++) paths[bnd].push([]); }
-    function project(i, j, lvl) {                    // fractional grid coords -> screen
-      var i0 = Math.floor(i), j0 = Math.floor(j), fi = i - i0, fj = j - j0;
-      var z = zs[j0] + (zs[Math.min(GZ - 1, j0 + 1)] - zs[j0]) * fj;
-      var x = ((i / (GX - 1)) * W * 1.1 - W * 0.05 - W / 2) * z / kx;
-      return [W / 2 + (x / z) * kx, horizon + ((cam - lvl) / z) * ky];
-    }
-    for (var j = 0; j < GZ - 1; j++) {
-      var band = Math.min(BANDS - 1, Math.floor(j / (GZ - 1) * BANDS));
-      for (var i = 0; i < GX - 1; i++) {
-        var a0 = hs[j * GX + i], a1 = hs[j * GX + i + 1], a2 = hs[(j + 1) * GX + i + 1], a3 = hs[(j + 1) * GX + i];
-        for (var q = 0; q < LEVELS.length; q++) {
-          var lv = LEVELS[q];
-          var cs = (a0 > lv ? 1 : 0) | (a1 > lv ? 2 : 0) | (a2 > lv ? 4 : 0) | (a3 > lv ? 8 : 0);
-          if (cs === 0 || cs === 15) continue;
-          var e = [];                                // crossing points on the 4 edges
-          if ((cs & 1) !== ((cs >> 1) & 1)) e.push([i + (lv - a0) / (a1 - a0), j]);
-          if (((cs >> 1) & 1) !== ((cs >> 2) & 1)) e.push([i + 1, j + (lv - a1) / (a2 - a1)]);
-          if (((cs >> 2) & 1) !== ((cs >> 3) & 1)) e.push([i + (lv - a3) / (a2 - a3), j + 1]);
-          if (((cs >> 3) & 1) !== (cs & 1)) e.push([i, j + (lv - a0) / (a3 - a0)]);
-          for (var k = 0; k + 1 < e.length; k += 2) {
-            var p0 = project(e[k][0], e[k][1], lv), p1 = project(e[k + 1][0], e[k + 1][1], lv);
-            paths[band][q].push(p0[0], p0[1], p1[0], p1[1]);
-          }
-        }
-      }
-    }
-    ctx.lineWidth = 1;
-    for (var bnd = 0; bnd < BANDS; bnd++) {
-      var near = 1 - bnd / BANDS;                    // band 0 is nearest
-      for (var q = 0; q < LEVELS.length; q++) {
-        var seg = paths[bnd][q];
-        if (!seg.length) continue;
-        var index = q % 5 === 0;
-        ctx.strokeStyle = index ? 'rgba(121,180,162,' + (0.10 + 0.22 * near).toFixed(3) + ')'
-                                : 'rgba(234,230,222,' + (0.035 + 0.11 * near).toFixed(3) + ')';
-        ctx.beginPath();
-        for (var m = 0; m < seg.length; m += 4) { ctx.moveTo(seg[m], seg[m + 1]); ctx.lineTo(seg[m + 2], seg[m + 3]); }
-        ctx.stroke();
-      }
+    // the mountains (precomputed on resize; only a faint shimmer moves)
+    for (var p = 0; p < peaks.length; p += 5) {
+      var al = peaks[p + 2] * (0.9 + 0.1 * Math.sin(peaks[p + 4] + t * 0.0007));
+      ctx.fillStyle = 'rgba(234,230,222,' + al.toFixed(3) + ')';
+      ctx.fillRect(peaks[p], peaks[p + 1], peaks[p + 3], peaks[p + 3]);
     }
 
     // two thin orbits and a travelling point
@@ -238,7 +215,7 @@
 
   var last = 0, raf;
   function tick(t) {
-    if (t - last > 60) { last = t; draw(t); }     // ~16 frames per second: the swell moves slowly
+    if (t - last > 60) { last = t; draw(t); }     // ~16 frames per second
     if (!document.hidden) raf = requestAnimationFrame(tick);
   }
   resize(); draw(0);
