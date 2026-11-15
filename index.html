@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theodoris Donval</title>
+<meta name="description" content="Theodoris Donval — security engineering student (EURECOM, TUM). LLM agents for crash triage, verifiable secure aggregation, graph analysis. Open to a 24-week internship from March 2027 in Munich.">
+<meta name="theme-color" content="#0F0F0E">
+<link rel="alternate" type="text/markdown" href="index.md">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=JetBrains+Mono:wght@300..600&amp;display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  "dateModified": "2026-11-15",
+  "mainEntity": {
+    "@type": "Person",
+    "name": "Theodoris Donval",
+    "url": "https://theodoris-d.github.io/",
+    "jobTitle": "Engineering student (cybersecurity major)",
+    "address": { "@type": "PostalAddress", "addressLocality": "Munich", "addressCountry": "DE" },
+    "affiliation": [
+      { "@type": "CollegeOrUniversity", "name": "EURECOM", "url": "https://www.eurecom.fr" },
+      { "@type": "CollegeOrUniversity", "name": "Technical University of Munich", "url": "https://www.tum.de" }
+    ],
+    "alumniOf": { "@type": "EducationalOrganization", "name": "Lycée Clemenceau, CPGE MP2I/MPI", "address": "Nantes, France" },
+    "seeks": { "@type": "Demand", "description": "24-week full-time internship (Pflichtpraktikum) from March 2027, Munich, in English; open to any team or topic" },
+    "knowsAbout": ["AI agent security", "Prompt-injection defences", "LLM evaluation", "Verifiable computation", "Secure aggregation", "Graph analysis"],
+    "knowsLanguage": ["fr", "en", "el", "de"],
+    "sameAs": ["https://github.com/Theodoris-D", "https://www.linkedin.com/in/theodoris-donval"]
+  }
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="index.html" aria-label="Theodoris Donval, home"><span class="theta" aria-hidden="true">Θ</span><span class="name">Donval</span></a>
+<nav class="nav" aria-label="Sections">
+<a href="#work"><span class="n" aria-hidden="true">αʹ</span>Work</a>
+<a href="#education"><span class="n" aria-hidden="true">βʹ</span>Education</a>
+<a href="#skills"><span class="n" aria-hidden="true">γʹ</span>Skills</a>
+<a href="#contact"><span class="n" aria-hidden="true">δʹ</span>Contact</a>
+</nav>
+<a class="btn small" href="cv.pdf">CV ↓</a>
+</div>
+</header>
+
+<main id="main">
+
+<section class="hero wrap" aria-labelledby="name">
+<div class="hero-grid fit-unit">
+<div class="stack">
+<p class="kicker">Security · Cryptography · AI</p>
+<h1 id="name">Theodoris<br>Donval</h1>
+<p class="intro">Engineering student at EURECOM (cybersecurity major), on exchange at TUM in Munich.</p>
+<p class="status"><span class="diamond" aria-hidden="true"></span><span>Open to a 24-week internship · March 2027 · Munich · English</span></p>
+<div class="actions">
+<a class="btn solid" href="mailto:theodorisdonval@gmail.com">Get in touch</a>
+<a class="btn" href="cv.pdf">Download CV (PDF)</a>
+</div>
+<blockquote class="epigraph">
+<p lang="grc">φύσις κρύπτεσθαι φιλεῖ</p>
+<footer>Heraclitus, fragment B123 — “nature loves to hide”</footer>
+</blockquote>
+</div>
+
+<figure class="statue">
+<img src="assets/statue-dither.png" width="918" height="1200" alt="Marble head of the goddess Hygieia, rendered as a one-bit dither in pale marble on black.">
+<figcaption>
+<span>Fig. α — Head of Hygieia, marble. 3D scan, 1-bit render.</span>
+<span>sha256("φύσις κρύπτεσθαι φιλεῖ") = fbd3b729 4d2710f5 fc83afda 343985c6 1bbf58c3 989013ff 3a674bd6 a1cf7cb6</span>
+</figcaption>
+</figure>
+</div>
+</section>
+
+<section id="work" class="work wrap" aria-labelledby="work-title">
+<div class="section-head">
+<h2 id="work-title"><span class="n" aria-hidden="true">αʹ</span>Work</h2>
+<p>3 projects · 1 research internship · each with its own case study</p>
+</div>
+<div class="cards">
+<article class="card">
+<p class="card-top"><span class="letter-sm" aria-hidden="true">Α</span><span class="kicker">Nov 2026 · Solo project</span></p>
+<h3><a href="projects/crash-triage-agent.html">Crash-Triage Agent</a></h3>
+<p class="card-text">An LLM agent drives GDB and AddressSanitizer over MCP, patches the crash and verifies the patch. Hardened against prompt injection.</p>
+<p class="big">23/24</p>
+<p class="card-text">verified patches over two runs of a 12-case C benchmark (Claude Haiku 5.5). Baseline without LLM: 0/12.</p>
+<p class="limit">CWE naming 9/12, only ties a sanitizer parser.</p>
+<a class="read-more" href="projects/crash-triage-agent.html">Case study →</a>
+</article>
+<article class="card">
+<p class="card-top"><span class="letter-sm" aria-hidden="true">Β</span><span class="kicker">Spring 2026 · EURECOM</span></p>
+<h3><a href="projects/qemu-snapshot-restore.html">QEMU snapshot restore</a></h3>
+<p class="card-text">A harness that benchmarks five ways to restore a VM snapshot between fuzzing inputs. With Frédéric Kah.</p>
+<p class="big">≈ 50 ms</p>
+<p class="card-text">copy-on-write restore at any guest size, vs 3.7 – 23.9 s for a plain loadvm.</p>
+<p class="limit">synthetic write pattern; thresholds shift 3× between machines.</p>
+<a class="read-more" href="projects/qemu-snapshot-restore.html">Case study →</a>
+</article>
+<article class="card">
+<p class="card-top"><span class="letter-sm" aria-hidden="true">Γ</span><span class="kicker">Fall 2025 · EURECOM</span></p>
+<h3><a href="projects/verifiable-aggregation.html">Verifiable secure aggregation</a></h3>
+<p class="card-text">An untrusted server sums encrypted vectors without seeing them; anyone can verify the sum. Rust; in a paper under submission.</p>
+<p class="big">0.9 s</p>
+<p class="card-text">to verify 100 users × 100 dimensions (aggregation: 0.7 s).</p>
+<p class="limit">OPRF key binding is a prototype (simulated ZK proof).</p>
+<a class="read-more" href="projects/verifiable-aggregation.html">Case study →</a>
+</article>
+<article class="card">
+<p class="card-top"><span class="letter-sm" aria-hidden="true">Δ</span><span class="kicker">Jun – Jul 2025 · Inria</span></p>
+<h3><a href="projects/bitcoin-graph.html">Bitcoin transaction graph</a></h3>
+<p class="card-text">Validated a parallel extractor over 500,000+ runs, then showed spectral clustering fails here, pointing the team to GNNs.</p>
+<p class="big mid">31.5 M → 816 k</p>
+<p class="card-text">nodes around illicit addresses, after removing hubs.</p>
+<p class="limit">no ground truth on which addresses share an owner.</p>
+<a class="read-more" href="projects/bitcoin-graph.html">Case study →</a>
+</article>
+</div>
+</section>
+
+<section class="screen wrap edu-skills" aria-label="Education and skills">
+<div class="two-col fit-unit">
+<div id="education" class="stack">
+<div class="section-head"><h2><span class="n" aria-hidden="true">βʹ</span>Education</h2></div>
+<ol class="timeline">
+<li><span class="when">Oct 2026 – Mar 2027</span><strong>Technical University of Munich (TUM)</strong><span class="what">Exchange semester in Informatics (Master’s courses). Network Security, Deep Learning, AI Testing, Decentralized Information Systems Lab, EU AI Act Seminar.</span><a class="school-link" href="education/tum.html">Courses and syllabi →</a></li>
+<li><span class="when">2024 – 2027</span><strong>EURECOM, Sophia Antipolis</strong><span class="what">Master’s degree in Computer Science (Diplôme d’Ingénieur), cybersecurity major. System and network security, secure communications, multiparty computation and blockchains, machine learning, statistical inference, information theory.</span><a class="school-link" href="education/eurecom.html">Courses and syllabi →</a></li>
+<li><span class="when">2022 – 2024</span><strong>CPGE MP2I / MPI, Lycée Clemenceau, Nantes</strong><span class="what">Two-year intensive preparatory classes in mathematics and computer science.</span><a class="school-link" href="education/cpge.html">Programme →</a></li>
+</ol>
+</div>
+<div id="skills" class="stack">
+<div class="section-head"><h2><span class="n" aria-hidden="true">γʹ</span>Skills</h2></div>
+<dl class="skills">
+<div><dt>Code</dt><dd>Python · Rust · C · OCaml · SQL (basics)</dd></div>
+<div><dt>AI</dt><dd>Agents (MCP, tool calling) · LLM evaluation · Prompt-injection defences</dd></div>
+<div><dt>ML &amp; data</dt><dd>PyTorch · scikit-learn · NumPy · Pandas · Numba · NetworkX</dd></div>
+<div><dt>Systems &amp; security</dt><dd>Linux · Git · GDB · AddressSanitizer · Pairing-based cryptography</dd></div>
+<div><dt>Languages</dt><dd>French (native) · English (bilingual, TOEIC 990/990) · Greek (spoken) · German (A1, learning)</dd></div>
+<div><dt>Off-screen</dt><dd>General Secretary, EURECOM Student Sports Association (2024 – 2025).</dd></div>
+</dl>
+</div>
+</div>
+</section>
+
+<section id="contact" class="screen wrap" aria-labelledby="contact-title">
+<div class="contact fit-unit">
+<p class="kicker"><span class="accent grc" aria-hidden="true" style="font-family: var(--serif); font-size: 20px; letter-spacing: 0; text-transform: none;">δʹ</span>&nbsp; Contact</p>
+<h2 id="contact-title">From March 2027, in Munich.</h2>
+<p>A 24-week, full-time internship, in English, open to any team or topic.</p>
+<div class="actions">
+<a class="btn solid" href="mailto:theodorisdonval@gmail.com">Email ↗</a>
+<a class="btn" href="https://www.linkedin.com/in/theodoris-donval">LinkedIn ↗</a>
+<a class="btn" href="https://github.com/Theodoris-D">GitHub ↗</a>
+<a class="btn" href="cv.pdf">CV (PDF) ↓</a>
+</div>
+</div>
+</section>
+</main>
+
+<footer class="site-footer">
+<div class="wrap">
+<span>Θ · Theodoris Donval · Munich, 2026</span>
+<span>For agents: <a href="llms.txt">/llms.txt</a> · <a href="index.md">this page as Markdown</a></span>
+<span class="grc" lang="grc">μηδὲν ἄγαν</span>
+</div>
+</footer>
+<script src="assets/bg.js" defer></script>
+<script src="assets/fit.js" defer></script>
+</body>
+</html>

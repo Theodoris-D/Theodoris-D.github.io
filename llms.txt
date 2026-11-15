@@ -1,0 +1,22 @@
+# Theodoris Donval
+> Engineering student, cybersecurity major. EURECOM (Diplôme d'Ingénieur), exchange at TUM. Looking for a 24-week full-time internship (Pflichtpraktikum) from March 2027 in Munich, in English, in any team or topic.
+
+Every number on this site is given with its limits. Each page has a Markdown version.
+
+## Pages
+- [Profile](/index.md): availability, education, skills, contact
+- [CV (PDF)](/cv.pdf): one page, English
+- [Crash-Triage Agent](/projects/crash-triage-agent.md): LLM agent + GDB/ASan over MCP; 23/24 verified patches over two runs; prompt-injection defences
+- [QEMU snapshot restore](/projects/qemu-snapshot-restore.md): EURECOM semester project; five VM restore strategies for fuzzing; cow ≈ 50 ms restore, crossover ≈ 100 MB dirty
+- [Verifiable secure aggregation](/projects/verifiable-aggregation.md): PUDA over vectors in Rust; verify 0.9 s at 100 users × 100 dims
+- [Bitcoin transaction graph](/projects/bitcoin-graph.md): Inria internship; 31.5 M → 816 k nodes; spectral clustering fails (99.75 % in one cluster)
+
+## Education
+- [TUM courses](/education/tum.md): exchange semester 2026/27, programmes
+- [EURECOM courses](/education/eurecom.md): engineering degree, programmes
+- [CPGE MP2I/MPI](/education/cpge.md): preparatory classes, programmes
+
+## Contact
+- Email: theodorisdonval@gmail.com
+- GitHub: https://github.com/Theodoris-D
+- LinkedIn: https://www.linkedin.com/in/theodoris-donval

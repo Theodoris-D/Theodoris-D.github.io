@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin Transaction Graph · Theodoris Donval</title>
+<meta name="description" content="Research internship at Inria: a validated, Numba-parallelised pipeline to extract transaction subgraphs around illicit Bitcoin addresses, and why spectral clustering fails on them.">
+<meta name="theme-color" content="#0F0F0E">
+<link rel="alternate" type="text/markdown" href="bitcoin-graph.md">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=JetBrains+Mono:wght@300..600&amp;display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "name": "Bitcoin transaction graph analysis (research internship)",
+  "author": { "@type": "Person", "name": "Theodoris Donval" },
+  "dateCreated": "2025",
+  "sourceOrganization": { "@type": "ResearchOrganization", "name": "Inria, DIANA project-team" },
+  "about": ["Bitcoin", "Graph analysis", "Spectral clustering", "Numba"]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="../index.html" aria-label="Theodoris Donval, home"><span class="theta" aria-hidden="true">Θ</span><span class="name">Donval</span></a>
+<nav class="nav" aria-label="Projects">
+<a href="crash-triage-agent.html"><span class="n" aria-hidden="true">Α</span>Crash-Triage</a>
+<a href="qemu-snapshot-restore.html"><span class="n" aria-hidden="true">Β</span>QEMU</a>
+<a href="verifiable-aggregation.html"><span class="n" aria-hidden="true">Γ</span>Aggregation</a>
+<a href="bitcoin-graph.html" aria-current="page"><span class="n" aria-hidden="true">Δ</span>Bitcoin graph</a>
+</nav>
+<a class="btn small" href="../index.html#contact">Contact</a>
+</div>
+</header>
+
+<main id="main" class="wrap">
+<p class="crumbs"><a href="../index.html#work">← Work</a> &nbsp;/&nbsp; Δ · Bitcoin transaction graph</p>
+
+<section class="case-hero" aria-labelledby="title">
+<div class="stack">
+<p class="kicker">Jun – Jul 2025 · Research internship · Inria</p>
+<h1 id="title">Bitcoin transaction graph</h1>
+<p class="lede">Bitcoin’s ledger is public, but its users are pseudonymous and change addresses all the time. Around a set of addresses already flagged as illicit, I built and validated the pipeline that extracts their transaction neighbourhood, then tested whether graph structure alone could group addresses by owner. It could not, and showing why set the team’s next direction.</p>
+</div>
+<dl class="meta">
+<dt>Where</dt><dd>Inria centre at Université Côte d’Azur, DIANA project-team, Sophia Antipolis</dd>
+<dt>Length</dt><dd>6 weeks, 16 June – 25 July 2025</dd>
+<dt>Role</dt><dd>Research intern: literature review, extraction pipeline, validation, structural analysis</dd>
+<dt>Stack</dt><dd>Python · Numba (JIT, parallel BFS) · NetworkX · NumPy · Pandas · scikit-learn · Matplotlib</dd>
+<dt>Code</dt><dd>Internal to the team; not public</dd>
+</dl>
+</section>
+
+<div class="figures" role="list">
+<div class="fig" role="listitem"><p class="v">31.5 M</p><p class="l">nodes in the 2-hop neighbourhood of the illicit seeds</p><p class="c">31,535,968 addresses</p></div>
+<div class="fig" role="listitem"><p class="v">816 k</p><p class="l">nodes left after removing exchange-like hubs</p><p class="c">815,984 · −97.4 %</p></div>
+<div class="fig" role="listitem"><p class="v">500 k+</p><p class="l">validation runs of the parallel extractor, 0 divergences</p><p class="c">5 graph families, up to 10,000 nodes</p></div>
+<div class="fig" role="listitem"><p class="v">99.75 %</p><p class="l">of the clustered component falls into one cluster</p><p class="c">k = 2 by eigengap · the method fails here</p></div>
+</div>
+
+<section class="chapter" aria-labelledby="c1">
+<h2 id="c1"><span class="n" aria-hidden="true">αʹ</span>The question</h2>
+<div class="cols">
+<div class="prose">
+<p>Fifteen years of Bitcoin transactions are public, which makes the ledger a rare dataset for studying market manipulation and illicit flows. The obstacle is identity. Addresses are not people, wallets create a fresh address for almost every payment, and one actor can control thousands of addresses.</p>
+<p>The full graph has hundreds of millions of addresses and billions of transactions; analysing it whole takes the kind of infrastructure only specialised companies have. So the approach was to <strong>shrink the space</strong>: start from a set of addresses the team had already identified as illicit, extract their neighbourhood, and look for structure there.</p>
+<p>The question for the internship: <em>can graph topology alone reveal groups of addresses that belong to one entity?</em></p>
+</div>
+<figure class="diagram">
+<svg viewBox="0 0 460 400" role="img" aria-labelledby="s-t s-d">
+<title id="s-t">How the subgraph is built around one seed</title>
+<desc id="s-d">An illicit seed address sits at the centre. Every address one or two transactions away, incoming or outgoing, is kept. Addresses three hops away are left out.</desc>
+<circle cx="230" cy="200" r="80" fill="none" stroke="#45433F" stroke-dasharray="3 4"/>
+<circle cx="230" cy="200" r="150" fill="none" stroke="#45433F" stroke-dasharray="3 4"/>
+<text x="230" y="114" font-size="10" text-anchor="middle" class="t-muted">distance 1</text>
+<text x="230" y="44" font-size="10" text-anchor="middle" class="t-muted">distance 2</text>
+<g stroke="#A39E94" stroke-width="1.1">
+<line x1="230" y1="200" x2="299.3" y2="160"/><line x1="230" y1="200" x2="160.7" y2="160"/>
+<line x1="230" y1="200" x2="202.6" y2="275.2"/><line x1="230" y1="200" x2="299.3" y2="240"/>
+<line x1="299.3" y1="160" x2="377.7" y2="174"/><line x1="299.3" y1="160" x2="305" y2="70.1"/>
+<line x1="160.7" y1="160" x2="155" y2="70.1"/><line x1="160.7" y1="160" x2="80.6" y2="186.9"/>
+<line x1="202.6" y1="275.2" x2="107.1" y2="286"/><line x1="299.3" y1="240" x2="305" y2="329.9"/>
+</g>
+<g stroke="#45433F" stroke-width="1.1" stroke-dasharray="3 3">
+<line x1="377.7" y1="174" x2="432" y2="118"/><line x1="107.1" y1="286" x2="40" y2="342"/><line x1="305" y1="329.9" x2="350" y2="382"/>
+</g>
+<g fill="#EAE6DE">
+<circle cx="299.3" cy="160" r="7"/><circle cx="160.7" cy="160" r="7"/><circle cx="202.6" cy="275.2" r="7"/><circle cx="299.3" cy="240" r="7"/>
+<circle cx="377.7" cy="174" r="7"/><circle cx="305" cy="70.1" r="7"/><circle cx="155" cy="70.1" r="7"/><circle cx="80.6" cy="186.9" r="7"/><circle cx="107.1" cy="286" r="7"/><circle cx="305" cy="329.9" r="7"/>
+</g>
+<g fill="#0F0F0E" stroke="#6E6A62" stroke-width="1.25">
+<circle cx="432" cy="118" r="6"/><circle cx="40" cy="342" r="6"/><circle cx="350" cy="382" r="6"/>
+</g>
+<circle cx="230" cy="200" r="11" fill="#79B4A2"/>
+<text x="230" y="230" font-size="11" text-anchor="middle" class="t-accent">seed</text>
+</svg>
+<ul class="legend">
+<li><span class="sw" style="background: #79B4A2; border-radius: 50%; width: 10px;"></span>illicit seed</li>
+<li><span class="sw" style="background: #EAE6DE; border-radius: 50%; width: 10px;"></span>kept (≤ 2 hops, in or out)</li>
+<li><span class="sw" style="border: 1.25px solid #6E6A62; border-radius: 50%; width: 10px;"></span>left out (3+ hops)</li>
+</ul>
+<figcaption>Fig. 1 — Addresses are nodes, transactions are directed edges. Distance counts paths in either direction.</figcaption>
+</figure>
+</div>
+</section>
+
+<section class="chapter" aria-labelledby="c2">
+<h2 id="c2"><span class="n" aria-hidden="true">βʹ</span>The pipeline</h2>
+<ol class="pipeline">
+<li><span class="step">Step 1 · Seeds</span><strong>Illicit addresses</strong><span>A set provided by the team, used as the starting point. How it was collected is outside this work.</span><span class="out">input</span></li>
+<li><span class="step">Step 2 · Extract</span><strong>2-hop BFS, in parallel</strong><span>Breadth-first search from every seed, compiled with Numba (<code>@njit</code>) and spread over CPU cores.</span><span class="out">→ 31,535,968 nodes</span></li>
+<li><span class="step">Step 3 · Filter</span><strong>Remove hubs</strong><span>Drop nodes with more than 1,000 incoming and 1,000 outgoing neighbours: exchange-like addresses that bridge unrelated communities.</span><span class="out">→ 815,984 nodes</span></li>
+<li><span class="step">Step 4 · Connect</span><strong>WCC and SCC</strong><span>Weakly and strongly connected components. One giant component holds nearly all the activity; analysis focuses there.</span><span class="out">→ giant component</span></li>
+<li><span class="step">Step 5 · Spectrum</span><strong>Normalised Laplacian</strong><span>Graph made undirected; eigenvalues of the normalised Laplacian; the largest eigengap suggests the number of clusters.</span><span class="out">→ k = 2</span></li>
+<li><span class="step">Step 6 · Cluster</span><strong>k-means on the embedding</strong><span>Nodes projected on the k smallest eigenvectors, then grouped with k-means.</span><span class="out">→ 10,557 / 26 nodes</span></li>
+</ol>
+
+<figure class="diagram narrow" style="margin-top: 40px;">
+<svg viewBox="0 0 640 196" role="img" aria-labelledby="f-t f-d">
+<title id="f-t">Graph size at each stage, log scale</title>
+<desc id="f-d">Two-hop subgraph: 31,535,968 nodes. After hub filtering: 815,984 nodes. Component that was clustered: 10,583 nodes.</desc>
+<g font-size="10" class="t-muted">
+<text x="200" y="16" text-anchor="middle" class="t-muted">1 k</text>
+<text x="284" y="16" text-anchor="middle" class="t-muted">10 k</text>
+<text x="368" y="16" text-anchor="middle" class="t-muted">100 k</text>
+<text x="452" y="16" text-anchor="middle" class="t-muted">1 M</text>
+<text x="536" y="16" text-anchor="middle" class="t-muted">10 M</text>
+<text x="620" y="16" text-anchor="middle" class="t-muted">100 M</text>
+</g>
+<line class="grid" x1="284" y1="26" x2="284" y2="180"/><line class="grid" x1="368" y1="26" x2="368" y2="180"/>
+<line class="grid" x1="452" y1="26" x2="452" y2="180"/><line class="grid" x1="536" y1="26" x2="536" y2="180"/><line class="grid" x1="620" y1="26" x2="620" y2="180"/>
+<line class="axis" x1="200" y1="26" x2="200" y2="180"/>
+<text x="0" y="56" font-size="13">2-hop subgraph</text>
+<rect class="bar-b" x="200" y="40" width="377.9" height="24"/>
+<text x="572" y="56" font-size="11" text-anchor="end">31,535,968</text>
+<text x="0" y="104" font-size="13">Hubs removed</text>
+<rect class="bar-a" x="200" y="88" width="244.6" height="24"/>
+<text x="439" y="104" font-size="11" text-anchor="end" class="t-dark">815,984</text>
+<text x="0" y="152" font-size="13">Component clustered</text>
+<rect class="bar-a" x="200" y="136" width="86.1" height="24"/>
+<text x="294" y="152" font-size="11">10,583</text>
+</svg>
+<figcaption>Fig. 2 — Each grid line is ten times the previous one. The hub filter alone removes 97.4 % of the nodes.</figcaption>
+</figure>
+</section>
+
+<section class="chapter" aria-labelledby="c3">
+<h2 id="c3"><span class="n" aria-hidden="true">γʹ</span>Validating the extractor</h2>
+<div class="cols">
+<div class="prose">
+<p>Every later result depends on the extraction being right, and parallel code can be wrong in ways that only show up once in thousands of runs. Numba was then fairly new to the team, so I treated the extractor as untrusted until proven otherwise.</p>
+<p><strong>Correctness.</strong> About ten hand-checkable graphs for the edge cases: empty graph, self-loops, converging paths, multiple edges between the same pair, and the directional distance rule.</p>
+<p><strong>Stress.</strong> Five procedurally generated families of up to 10,000 nodes, chosen to break different assumptions (table).</p>
+<p><strong>Determinism.</strong> A harness (<code>tester_serial.py</code>) ran the extractor 100,000 times in a row on each graph and compared every output with the first. Any divergence would stop the run.</p>
+<p>In total, more than <strong>500,000 runs</strong>, with <strong>no error and no divergence</strong>.</p>
+</div>
+<div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Family</th><th>What it stresses</th></tr></thead>
+<tbody>
+<tr><td>Fully disconnected</td><td>No edges at all: nothing should be reached</td></tr>
+<tr><td>Complete (tournaments)</td><td>Maximum density, every pair connected</td></tr>
+<tr><td>2D grids</td><td>Long paths, many equal-length routes</td></tr>
+<tr><td>Stars</td><td>One hub with huge degree, like an exchange</td></tr>
+<tr><td>Unbalanced trees</td><td>Very uneven depth and branching</td></tr>
+</tbody>
+<caption>Up to 10,000 nodes each; 100,000 consecutive runs per graph.</caption>
+</table>
+</div>
+<div class="callout">
+<p class="kicker">Why it mattered</p>
+<p>A non-deterministic bug in the extractor would have silently changed which addresses end up in the subgraph, and every cluster built on top of it. The validation is what made a negative result trustworthy.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="chapter" aria-labelledby="c4">
+<h2 id="c4"><span class="n" aria-hidden="true">δʹ</span>The result: a negative one</h2>
+<figure class="diagram">
+<svg viewBox="0 0 640 120" role="img" aria-labelledby="k-t k-d">
+<title id="k-t">Cluster sizes found by spectral clustering</title>
+<desc id="k-d">Cluster 0 holds 10,557 nodes, 99.75 percent of the component. Cluster 1 holds 26 nodes, 0.25 percent.</desc>
+<rect x="20" y="30" width="598.5" height="36" fill="#6E6A62"/>
+<rect x="618.5" y="30" width="1.5" height="36" fill="#79B4A2"/>
+<text x="34" y="53" font-size="13">Cluster 0 · 10,557 nodes · 99.75 %</text>
+<polyline points="619,66 619,92 560,92" fill="none" stroke="#79B4A2" stroke-width="1.25"/>
+<text x="552" y="96" font-size="12" text-anchor="end" class="t-accent">Cluster 1 · 26 nodes · 0.25 %</text>
+<text x="20" y="20" font-size="10" class="t-muted">0 %</text>
+<text x="620" y="20" font-size="10" text-anchor="end" class="t-muted">100 %</text>
+</svg>
+<figcaption>Fig. 3 — The eigengap heuristic suggested k = 2. Spectral clustering then split off a sliver and left everything else together.</figcaption>
+</figure>
+<div class="cols" style="margin-top: 40px;">
+<div class="prose">
+<p>Technically correct, practically empty. Rather than several communities of meaningful size, the method isolated 26 nodes from one massive, densely interconnected core. Even with the hubs gone, the structure is too homogeneous for a method that only looks at global topology.</p>
+<p>That was the useful finding. Spectral clustering sees the graph through a few eigenvectors of its Laplacian; a tight group of addresses run by one actor is a <em>local</em> pattern. This pointed the team towards <strong>graph neural networks</strong>, which build a representation for each node by aggregating features of its neighbourhood, and can therefore pick up exactly those local relational patterns.</p>
+</div>
+<div>
+<h3 style="margin-top: 0;">Decisions and their cost</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Decision</th><th>Gain</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Spectral clustering over Louvain</td><td>No assumption on cluster shape; can find small, dense groups</td><td>Heavier to compute. Louvain is faster but has a resolution limit that hides small communities, exactly the ones that matter here</td></tr>
+<tr><td>Filter hubs (&gt; 1,000 in and out)</td><td>Removes artificial bridges; clustering becomes possible</td><td>Loses every direct interaction with large platforms</td></tr>
+<tr><td>Treat the graph as undirected</td><td>Simple, symmetric Laplacian</td><td>Loses who pays whom</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+
+<section class="chapter" aria-labelledby="c5">
+<h2 id="c5"><span class="n" aria-hidden="true">εʹ</span>Limits</h2>
+<ul class="limits">
+<li><strong>Exploratory</strong><span>Six weeks; the goal was a reliable environment and a first structural reading, not a detection system.</span></li>
+<li><strong>No ground truth</strong><span>There is no list of which addresses share an owner, so clusters cannot be scored, only judged by their shape.</span></li>
+<li><strong>Seeds taken as given</strong><span>The illicit addresses came from the team; their selection may bias the neighbourhood.</span></li>
+<li><strong>Information removed</strong><span>Hub filtering and the undirected view both discard signal that a richer model could use.</span></li>
+</ul>
+</section>
+
+<nav class="next" aria-label="Other projects">
+<a href="crash-triage-agent.html"><span class="kicker">Next · Α</span><strong>Crash-Triage Agent</strong><span class="muted">MCP, GDB, prompt injection</span></a>
+<a href="qemu-snapshot-restore.html"><span class="kicker">Then · Β</span><strong>QEMU snapshot restore</strong><span class="muted">KVM, fuzzing, five restore modes</span></a>
+</nav>
+</main>
+
+<footer class="site-footer">
+<div class="wrap">
+<span>Θ · Theodoris Donval · Munich, 2026</span>
+<span>For agents: <a href="../llms.txt">/llms.txt</a> · <a href="bitcoin-graph.md">this page as Markdown</a></span>
+<span class="grc" lang="grc">μηδὲν ἄγαν</span>
+</div>
+</footer>
+<script src="../assets/bg.js" defer></script>
+</body>
+</html>

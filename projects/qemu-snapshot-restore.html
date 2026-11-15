@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QEMU Snapshot Restore · Theodoris Donval</title>
+<meta name="description" content="Benchmarking five ways to restore a QEMU virtual machine snapshot many times per second, for snapshot-based fuzzing. Harness, restore strategies, measured results and recommendations.">
+<meta name="theme-color" content="#0F0F0E">
+<link rel="alternate" type="text/markdown" href="qemu-snapshot-restore.md">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=JetBrains+Mono:wght@300..600&amp;display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "name": "High-Frequency VM Snapshot Restore Benchmarking in QEMU",
+  "author": [{ "@type": "Person", "name": "Frédéric Kah" }, { "@type": "Person", "name": "Theodoris Donval" }],
+  "dateCreated": "2026",
+  "publisher": { "@type": "CollegeOrUniversity", "name": "EURECOM" },
+  "about": ["QEMU", "KVM", "VM snapshots", "Snapshot-based fuzzing", "Benchmarking"]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="../index.html" aria-label="Theodoris Donval, home"><span class="theta" aria-hidden="true">Θ</span><span class="name">Donval</span></a>
+<nav class="nav" aria-label="Projects">
+<a href="crash-triage-agent.html"><span class="n" aria-hidden="true">Α</span>Crash-Triage</a>
+<a href="qemu-snapshot-restore.html" aria-current="page"><span class="n" aria-hidden="true">Β</span>QEMU</a>
+<a href="verifiable-aggregation.html"><span class="n" aria-hidden="true">Γ</span>Aggregation</a>
+<a href="bitcoin-graph.html"><span class="n" aria-hidden="true">Δ</span>Bitcoin graph</a>
+</nav>
+<a class="btn small" href="../index.html#contact">Contact</a>
+</div>
+</header>
+
+<main id="main" class="wrap">
+<p class="crumbs"><a href="../index.html#work">← Work</a> &nbsp;/&nbsp; Β · QEMU snapshot restore</p>
+
+<section class="case-hero" aria-labelledby="title">
+<div class="stack">
+<p class="kicker">Spring 2026 · Semester project · EURECOM</p>
+<h1 id="title">QEMU snapshot restore</h1>
+<p class="lede">A fuzzer that tests a whole virtual machine has to put it back in the same state after every input. We built a harness that drives a QEMU guest entirely from the host and measured five ways of restoring a snapshot, from full reload to copy-on-write, to find which one gives the most test cases per second, and when.</p>
+</div>
+<dl class="meta">
+<dt>Team</dt><dd>With Frédéric Kah (2 students)</dd>
+<dt>Scope</dt><dd>Semester project: harness, five restore modes, two machines, written report and talk</dd>
+<dt>Stack</dt><dd>QEMU 11 (upstream and hotreload fork) · KVM · GDB Remote Serial Protocol · QEMU Guest Agent · Python · Linux /proc accounting</dd>
+<dt>Machines</dt><dd>Intel Xeon Gold 5515+ server, 128 GiB · Intel i7-1260P laptop, 16 GiB</dd>
+<dt>Code</dt><dd>EURECOM GitLab, not public</dd>
+</dl>
+</section>
+
+<div class="figures" role="list">
+<div class="fig" role="listitem"><p class="v">≈ 50 ms</p><p class="l">copy-on-write restore, flat across 512 MB – 4 GB guests</p><p class="c">vs 3.7 s – 23.9 s for a plain loadvm</p></div>
+<div class="fig" role="listitem"><p class="v">27<small> iter/s</small></p><p class="l">best throughput, laptop, 0 dirty pages</p><p class="c">20 iter/s on the server</p></div>
+<div class="fig" role="listitem"><p class="v">≈ 100 MB</p><p class="l">of dirty memory where hotreload overtakes copy-on-write</p><p class="c">server; ≈ 3× earlier on the laptop</p></div>
+<div class="fig" role="listitem"><p class="v">100</p><p class="l">measured iterations per configuration, after 20 warm-up</p><p class="c">95 % CI and p5 / p50 / p95 reported</p></div>
+</div>
+
+<section class="chapter" aria-labelledby="c1">
+<h2 id="c1"><span class="n" aria-hidden="true">αʹ</span>The problem</h2>
+<div class="cols">
+<div class="prose">
+<p>Snapshot-based fuzzing reaches an interesting program state once, freezes the whole VM there, then replays thousands of mutated inputs from that exact state. Between two inputs, the VM must be restored. If one restore takes 500 ms, the fuzzer can never run more than 2 test cases per second.</p>
+<p>QEMU’s classic <code>loadvm</code> reads the entire snapshot and copies every page back into guest RAM, so its cost is <strong>O(guest RAM)</strong>, even when the guest only changed a few megabytes. The goal was to measure strategies whose cost follows <strong>what the guest actually dirtied</strong> instead.</p>
+<p>The key choice was the metric: <strong>total iteration time</strong>, execution plus restore. A strategy can look fast at restore time and push its cost into the next execution; measuring restore alone would have hidden exactly that.</p>
+</div>
+<figure class="diagram">
+<svg viewBox="0 0 460 300" role="img" aria-labelledby="l-t l-d">
+<title id="l-t">One fuzzing iteration</title>
+<desc id="l-d">The VM is snapshotted once at breakpoint A. Each iteration injects an input through GDB, runs the guest from A to B, then restores the VM back to A.</desc>
+<defs><marker id="aq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#A39E94"/></marker>
+<marker id="aqs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#79B4A2"/></marker></defs>
+<rect class="box" x="150" y="16" width="160" height="50"/>
+<text x="230" y="38" font-size="13" text-anchor="middle">Snapshot at A</text>
+<text x="230" y="55" font-size="10" text-anchor="middle" class="t-muted">once</text>
+<line class="edge" x1="230" y1="66" x2="230" y2="96" marker-end="url(#aq)"/>
+<rect class="box" x="20" y="100" width="170" height="54"/>
+<text x="105" y="123" font-size="13" text-anchor="middle">1 · Inject input</text>
+<text x="105" y="141" font-size="10" text-anchor="middle" class="t-muted">GDB memory write</text>
+<rect class="box" x="270" y="100" width="170" height="54"/>
+<text x="355" y="123" font-size="13" text-anchor="middle">2 · Run A → B</text>
+<text x="355" y="141" font-size="10" text-anchor="middle" class="t-muted">guest dirties N pages</text>
+<rect class="box-sec" x="145" y="216" width="170" height="54"/>
+<text x="230" y="239" font-size="13" text-anchor="middle" class="t-accent">3 · Restore to A</text>
+<text x="230" y="257" font-size="10" text-anchor="middle" class="t-muted">the cost being measured</text>
+<line class="edge" x1="190" y1="127" x2="268" y2="127" marker-end="url(#aq)"/>
+<polyline class="edge" points="355,154 355,243 317,243" marker-end="url(#aq)"/>
+<polyline class="edge-sec" points="145,243 105,243 105,156" marker-end="url(#aqs)"/>
+<text x="230" y="292" font-size="10" text-anchor="middle" class="t-muted">iter/s = 1000 / (exec ms + restore ms)</text>
+</svg>
+<figcaption>Fig. 1 — The loop the harness runs, driven from the host with no guest-side changes beyond a pre-compiled target.</figcaption>
+</figure>
+</div>
+</section>
+
+<section class="chapter" aria-labelledby="c2">
+<h2 id="c2"><span class="n" aria-hidden="true">βʹ</span>Five restore strategies</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Mode</th><th>Snapshot lives in</th><th>What restore does</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td class="m">upstream</td><td>SSD (QCOW2)</td><td><code>loadvm</code>: reads and copies all guest RAM</td><td class="m">O(RAM)</td></tr>
+<tr><td class="m">upstream + mapped-ram</td><td>SSD (flat file, page N at offset N × 4 KiB)</td><td>Same, but the page cache serves unchanged pages after the first restore</td><td class="m">O(RAM)</td></tr>
+<tr><td class="m">hotreload-wb</td><td>SSD (mapped-ram)</td><td>Reads the KVM dirty ring, copies back only the dirtied pages</td><td class="m">O(dirty)</td></tr>
+<tr class="hl"><td class="m">hotreload-shm</td><td>Host RAM (/dev/shm)</td><td>Same, as a RAM-to-RAM copy bounded by memory bandwidth</td><td class="m">O(dirty)</td></tr>
+<tr class="hl"><td class="m">cow</td><td>Host RAM (shared, never written)</td><td>Kills QEMU, relaunches it over the golden RAM mapped private, loads a few MB of CPU and device state</td><td class="m">≈ constant, but every first write later faults</td></tr>
+</tbody>
+<caption>Hotreload comes from a QEMU fork using dirty-page tracking; cow follows a design suggested by a QEMU maintainer, built on the migration code.</caption>
+</table>
+</div>
+
+<h3>What the harness measures</h3>
+<div class="cols">
+<div class="prose">
+<p>The host controls everything: breakpoints and memory writes over QEMU’s built-in GDB stub, process control over the guest agent. The guest target waits at A, receives N dirty pages, writes one byte to each, and reaches B.</p>
+<p>Each restore is broken down with kernel accounting, so a slow restore can be attributed to the disk, the CPU or the scheduler.</p>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Metric</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>Restore wall time (mean, 95 % CI, p5/p50/p95)</td><td class="m">monotonic clock</td></tr>
+<tr><td>Exec time A → B and minor page faults</td><td class="m">/proc/PID/stat</td></tr>
+<tr><td>Restore CPU and I/O-blocked time</td><td class="m">/proc/PID/schedstat</td></tr>
+<tr><td>Logical vs physical bytes read</td><td class="m">/proc/PID/io</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+
+<section class="chapter" aria-labelledby="c3">
+<h2 id="c3"><span class="n" aria-hidden="true">γʹ</span>Results</h2>
+<figure class="diagram">
+<div class="scroll">
+<svg viewBox="0 0 760 330" role="img" aria-labelledby="q-t q-d">
+<title id="q-t">Restore time at zero dirty pages, log scale</title>
+<desc id="q-d">upstream: 3,735 ms at 512 MB, 13,573 ms at 2 GB, 23,900 ms at 4 GB. upstream with mapped-ram: 1,225 ms, 3,997 ms, timeout at 4 GB. hotreload-wb: 339, 240, 330 ms. hotreload-shm: 189, 237, 232 ms. cow: 71, 54, 53 ms.</desc>
+<g font-size="10">
+<text x="220" y="16" text-anchor="middle" class="t-muted">10 ms</text>
+<text x="340" y="16" text-anchor="middle" class="t-muted">100 ms</text>
+<text x="460" y="16" text-anchor="middle" class="t-muted">1 s</text>
+<text x="580" y="16" text-anchor="middle" class="t-muted">10 s</text>
+<text x="700" y="16" text-anchor="middle" class="t-muted">100 s</text>
+</g>
+<line class="grid" x1="340" y1="26" x2="340" y2="320"/><line class="grid" x1="460" y1="26" x2="460" y2="320"/>
+<line class="grid" x1="580" y1="26" x2="580" y2="320"/><line class="grid" x1="700" y1="26" x2="700" y2="320"/>
+<line class="axis" x1="220" y1="26" x2="220" y2="320"/>
+
+<text x="0" y="56" font-size="13">upstream</text>
+<rect x="220" y="36" width="308.7" height="12" fill="#6E6A62" opacity="0.55"/><text x="534" y="46" font-size="10" class="t-muted">3.7 s</text>
+<rect x="220" y="50" width="375.9" height="12" fill="#6E6A62" opacity="0.8"/><text x="601" y="60" font-size="10" class="t-muted">13.6 s</text>
+<rect x="220" y="64" width="405.4" height="12" fill="#6E6A62"/><text x="631" y="74" font-size="10" class="t-muted">23.9 s</text>
+
+<text x="0" y="114" font-size="13">upstream + mapped</text>
+<rect x="220" y="94" width="250.6" height="12" fill="#6E6A62" opacity="0.55"/><text x="476" y="104" font-size="10" class="t-muted">1.2 s</text>
+<rect x="220" y="108" width="312.2" height="12" fill="#6E6A62" opacity="0.8"/><text x="538" y="118" font-size="10" class="t-muted">4.0 s</text>
+<text x="226" y="131" font-size="10" class="t-muted">4 GB: timeout (&gt; 300 s)</text>
+
+<text x="0" y="172" font-size="13">hotreload-wb</text>
+<rect x="220" y="152" width="183.6" height="12" fill="#79B4A2" opacity="0.45"/><text x="410" y="162" font-size="10">339 ms</text>
+<rect x="220" y="166" width="165.6" height="12" fill="#79B4A2" opacity="0.7"/><text x="392" y="176" font-size="10">240 ms</text>
+<rect x="220" y="180" width="182.2" height="12" fill="#79B4A2"/><text x="408" y="190" font-size="10">330 ms</text>
+
+<text x="0" y="230" font-size="13">hotreload-shm</text>
+<rect x="220" y="210" width="153.2" height="12" fill="#79B4A2" opacity="0.45"/><text x="379" y="220" font-size="10">189 ms</text>
+<rect x="220" y="224" width="165" height="12" fill="#79B4A2" opacity="0.7"/><text x="391" y="234" font-size="10">237 ms</text>
+<rect x="220" y="238" width="163.8" height="12" fill="#79B4A2"/><text x="390" y="248" font-size="10">232 ms</text>
+
+<text x="0" y="288" font-size="13" class="t-accent">cow</text>
+<rect x="220" y="268" width="102.1" height="12" fill="#79B4A2" opacity="0.45"/><text x="328" y="278" font-size="10">71 ms</text>
+<rect x="220" y="282" width="87.9" height="12" fill="#79B4A2" opacity="0.7"/><text x="314" y="292" font-size="10">54 ms</text>
+<rect x="220" y="296" width="86.9" height="12" fill="#79B4A2"/><text x="313" y="306" font-size="10">53 ms</text>
+</svg>
+</div>
+<ul class="legend">
+<li><span class="sw" style="background: #79B4A2; opacity: 0.45;"></span>512 MB guest</li>
+<li><span class="sw" style="background: #79B4A2; opacity: 0.7;"></span>2 GB</li>
+<li><span class="sw" style="background: #79B4A2;"></span>4 GB</li>
+<li><span class="sw" style="background: #6E6A62;"></span>O(RAM) modes</li>
+</ul>
+<figcaption>Fig. 2 — Mean restore time over 100 iterations on the server, with no pages dirtied. Each grid line is ten times the previous one: plain loadvm grows linearly with RAM and caps fuzzing at 0.26 iter/s even for a 512 MB guest.</figcaption>
+</figure>
+
+<figure class="diagram narrow" style="margin-top: 40px;">
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="x-t x-d">
+<title id="x-t">Copy-on-write execution penalty against dirty pages</title>
+<desc id="x-d">With copy-on-write, execution from A to B takes about 130 ms at 10,000 dirty pages, 285 ms at 30,000 and 530 ms at 60,000. Hotreload-shm overtakes copy-on-write at 25,000 to 30,000 dirty pages on the server, and at 8,000 to 10,000 on the laptop.</desc>
+<rect x="160" y="20" width="20" height="240" fill="#79B4A2" opacity="0.10"/>
+<rect x="330" y="20" width="50" height="240" fill="#79B4A2" opacity="0.18"/>
+<text x="170" y="278" font-size="9" text-anchor="middle" class="t-accent">laptop</text>
+<text x="355" y="278" font-size="9" text-anchor="middle" class="t-accent">server</text>
+<g font-size="10">
+<text x="70" y="264" text-anchor="end" class="t-muted">0</text>
+<text x="70" y="164" text-anchor="end" class="t-muted">250</text>
+<text x="70" y="64" text-anchor="end" class="t-muted">500 ms</text>
+<text x="80" y="296" text-anchor="middle" class="t-muted">0</text>
+<text x="280" y="296" text-anchor="middle" class="t-muted">20 k</text>
+<text x="480" y="296" text-anchor="middle" class="t-muted">40 k</text>
+<text x="680" y="296" text-anchor="end" class="t-muted">60 k dirty pages</text>
+</g>
+<line class="grid" x1="80" y1="160" x2="680" y2="160"/><line class="grid" x1="80" y1="60" x2="680" y2="60"/>
+<line class="axis" x1="80" y1="260" x2="680" y2="260"/>
+<polyline points="180,208 380,146 680,48" fill="none" stroke="#EAE6DE" stroke-width="1.5"/>
+<circle cx="180" cy="208" r="4.5" fill="#EAE6DE"/><circle cx="380" cy="146" r="4.5" fill="#EAE6DE"/><circle cx="680" cy="48" r="4.5" fill="#EAE6DE"/>
+<text x="190" y="226" font-size="11">130 ms</text>
+<text x="390" y="164" font-size="11">285 ms</text>
+<text x="670" y="40" font-size="11" text-anchor="end">530 ms</text>
+<text x="90" y="40" font-size="11" class="t-muted">cow: execution time A → B</text>
+</svg>
+<figcaption>Fig. 3 — Why copy-on-write loses at scale: its restore stays at ≈ 50 ms, but every page the guest touches in the fresh process faults once, so execution grows with dirty pages. Shaded: where hotreload-shm becomes faster on each machine.</figcaption>
+</figure>
+<div class="cols" style="margin-top: 40px;">
+<div>
+<h3 style="margin-top: 0;">Which mode to use</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Situation</th><th>Best mode</th></tr></thead>
+<tbody>
+<tr><td>Few dirty pages (≲ 100 MB on the server)</td><td class="m yes">cow</td></tr>
+<tr><td>Many dirty pages, or large guests</td><td class="m yes">hotreload-shm</td></tr>
+<tr><td>Not enough room in /dev/shm</td><td class="m">hotreload-wb</td></tr>
+<tr><td>No custom QEMU build allowed</td><td class="m">upstream + mapped-ram</td></tr>
+<tr><td>Throughput matters at all</td><td class="m no">never plain upstream</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout">
+<p class="kicker">The finding that generalises</p>
+<p>The crossover depends on the <strong>absolute amount of dirty data in MB</strong>, not on the dirty fraction of RAM. A fuzzer dirtying 100 MB of a 512 MB guest and one dirtying 100 MB of a 4 GB guest should pick the same mode.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="chapter" aria-labelledby="c4">
+<h2 id="c4"><span class="n" aria-hidden="true">δʹ</span>Limits</h2>
+<ul class="limits">
+<li><strong>Synthetic writes</strong><span>The target dirties the first N pages in order, the most cache-friendly pattern. A real fuzzer writes all over memory, which would hurt hotreload-wb more than hotreload-shm.</span></li>
+<li><strong>Warm page cache</strong><span>Runs were on a lightly loaded 128 GiB host. Under memory pressure, cached snapshot pages get evicted and the SSD-backed modes slow down.</span></li>
+<li><strong>I/O time is a residual</strong><span>Computed as wall − CPU − run-queue wait; any unmeasured overhead lands there, so it is an upper bound.</span></li>
+<li><strong>Two machines</strong><span>The crossover moved 3× between the server and the laptop. Thresholds must be measured on the target hardware.</span></li>
+<li><strong>Open question</strong><span>Hotreload still pays a small cost that grows with RAM even at zero dirty pages (≈ 75 ms from 512 MB to 4 GB), probably from structures sized to the whole guest.</span></li>
+</ul>
+</section>
+
+<nav class="next" aria-label="Other projects">
+<a href="verifiable-aggregation.html"><span class="kicker">Next · Γ</span><strong>Verifiable secure aggregation</strong><span class="muted">Rust, pairings, 24 benchmarks</span></a>
+<a href="crash-triage-agent.html"><span class="kicker">Back · Α</span><strong>Crash-Triage Agent</strong><span class="muted">MCP, GDB, prompt injection</span></a>
+</nav>
+</main>
+
+<footer class="site-footer">
+<div class="wrap">
+<span>Θ · Theodoris Donval · Munich, 2026</span>
+<span>For agents: <a href="../llms.txt">/llms.txt</a> · <a href="qemu-snapshot-restore.md">this page as Markdown</a></span>
+<span class="grc" lang="grc">μηδὲν ἄγαν</span>
+</div>
+</footer>
+<script src="../assets/bg.js" defer></script>
+</body>
+</html>
