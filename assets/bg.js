@@ -1,5 +1,6 @@
-/* Kryptos background: a still mountain range drawn as a point cloud, which
-   rises into view only when the reader reaches the end of the page (nearer
+/* Kryptos background: a mountain range drawn as a point cloud, gliding slowly
+   sideways and breathing a little, which rises into view only when the reader
+   reaches the end of the page (nearer
    ridges hide farther ones), the real sky above
    Munich at this moment (921 stars brighter than magnitude 4.5, facing south,
    the horizon on the mountains' foot), and two thin orbits ornamented like
@@ -49,11 +50,11 @@
     c.width = W * dpr; c.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     sky = computeSky(Date.now()); skyAt = Date.now();
-    peaks = buildMountains();
+    peaks = buildMountains(still ? 0 : performance.now()); builtAt = performance.now();
   }
 
   // Mountains: ridged value noise (sharp crests), taller towards the back.
-  var HORIZON = 0.9, peaks = [];
+  var HORIZON = 0.9, peaks = [], builtAt = -1e9;
   function hash(ix, iz) { var h = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453; return h - Math.floor(h); }
   function vnoise(x, z) {
     var ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
@@ -69,7 +70,10 @@
     }
     return sum;                                   // ~0 .. 1
   }
-  function buildMountains() {
+  function buildMountains(t) {
+    t = t || 0;
+    var pan = t * 0.00002;                       // slow sideways glide along the range
+    var breath = 0.06 * Math.sin(t * 0.00035);    // the relief breathes a little
     // grid of points, drawn near to far; a point is kept only if it rises above
     // every nearer point in its screen column, so ridges hide what is behind
     var out = [], NX = 170, NZ = 70, horizon = H * HORIZON, cam = 0.62;
@@ -84,7 +88,8 @@
         var x = -3.2 + i * (6.4 / NX) + (j % 2) * (3.2 / NX);
         var sx = W / 2 + (x / z) * kx;
         if (sx < -4 || sx > W + 4) continue;
-        var r = ridged(x * 0.55, z * 0.55);
+        var r = ridged(x * 0.55 + pan, z * 0.55);
+        r *= 1 + breath * Math.sin(x * 1.7 + z * 0.9 + t * 0.0004);
         var y = r * amp;
         var sy = horizon + ((cam - y) / z) * ky;
         var col = Math.max(0, Math.min(occl.length - 1, Math.round(sx / 2)));
@@ -122,6 +127,7 @@
     // last ~60 % of a screen of scrolling they fade in and climb from below
     var rv = reveal();
     if (rv > 0.002) {
+      if (!still && t - builtAt > 110) { peaks = buildMountains(t); builtAt = t; }
       var ease = rv * rv * (3 - 2 * rv), dy = (1 - ease) * H * 0.22;
       for (var p = 0; p < peaks.length; p += 5) {
         var al = ease * peaks[p + 2] * (0.9 + 0.1 * Math.sin(peaks[p + 4] + t * 0.0007));
