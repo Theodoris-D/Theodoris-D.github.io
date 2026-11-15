@@ -1,9 +1,6 @@
-/* Kryptos background: a mountain range drawn as a point cloud, gliding slowly
-   sideways and breathing a little, which rises into view only when the reader
-   reaches the end of the page (nearer
-   ridges hide farther ones), the real sky above
-   Munich at this moment (921 stars brighter than magnitude 4.5, facing south,
-   the horizon on the mountains' foot), and two thin orbits ornamented like
+/* Kryptos background: a point-cloud terrain that breathes slowly, the real sky
+   above Munich at this moment (921 stars brighter than magnitude 4.5, facing
+   south, the horizon on the terrain line), and two thin orbits ornamented like
    an astrolabe, with one verdigris point travelling along them and the Moon in
    its real phase on the rim.
    Very low contrast; paused when the tab is hidden; drawn once, still, when
@@ -27,7 +24,7 @@
   function computeSky(ms) {
     var d = julian(ms) - 2451545.0;
     var lst = ((280.46061837 + 360.98564736629 * d + LON) % 360 + 360) % 360;
-    var out = [], horizon = H * HORIZON;
+    var out = [], horizon = H * 0.56;
     for (var i = 0; i < STARS.length; i += 3) {
       var ra = STARS[i], dec = STARS[i + 1] * Math.PI / 180, mag = STARS[i + 2];
       var ha = (lst - ra) * Math.PI / 180;
@@ -44,69 +41,19 @@
     }
     return out;
   }
+  var NX = 150, NZ = 64;
 
   function resize() {
     W = window.innerWidth; H = window.innerHeight;
     c.width = W * dpr; c.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     sky = computeSky(Date.now()); skyAt = Date.now();
-    peaks = buildMountains(still ? 0 : performance.now()); builtAt = performance.now();
   }
 
-  // Mountains: ridged value noise (sharp crests), taller towards the back.
-  var HORIZON = 0.9, peaks = [], builtAt = -1e9;
-  function hash(ix, iz) { var h = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453; return h - Math.floor(h); }
-  function vnoise(x, z) {
-    var ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
-    var ux = fx * fx * (3 - 2 * fx), uz = fz * fz * (3 - 2 * fz);
-    var a = hash(ix, iz), b = hash(ix + 1, iz), c = hash(ix, iz + 1), d = hash(ix + 1, iz + 1);
-    return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
-  }
-  function ridged(x, z) {
-    var sum = 0, amp = 0.55, fr = 1;
-    for (var o = 0; o < 4; o++) {
-      var n = 1 - Math.abs(vnoise(x * fr + 17.3 * o, z * fr - 4.1 * o) * 2 - 1);
-      sum += n * n * amp; amp *= 0.5; fr *= 2.03;
-    }
-    return sum;                                   // ~0 .. 1
-  }
-  function buildMountains(t) {
-    t = t || 0;
-    var pan = t * 0.00002;                       // slow sideways glide along the range
-    var breath = 0.06 * Math.sin(t * 0.00035);    // the relief breathes a little
-    // grid of points, drawn near to far; a point is kept only if it rises above
-    // every nearer point in its screen column, so ridges hide what is behind
-    var out = [], NX = 170, NZ = 70, horizon = H * HORIZON, cam = 0.62;
-    var f = Math.min(W, H * 1.6) * 0.55, kx = f * 1.5, ky = f * 0.62;
-    var occl = new Float32Array(Math.ceil(W / 2) + 2).fill(H + 10);
-    for (var j = 0; j < NZ; j++) {
-      var z = 1 + j * 0.085;                       // depth 1 .. ~6.9
-      var back = Math.min(1, Math.max(0, (z - 1.6) / 4.2));
-      var amp = 0.2 + 2.4 * back * back;          // foothills in front, peaks at the back
-      var fade = 1 - j / NZ;
-      for (var i = 0; i < NX; i++) {
-        var x = -3.2 + i * (6.4 / NX) + (j % 2) * (3.2 / NX);
-        var sx = W / 2 + (x / z) * kx;
-        if (sx < -4 || sx > W + 4) continue;
-        var r = ridged(x * 0.55 + pan, z * 0.55);
-        r *= 1 + breath * Math.sin(x * 1.7 + z * 0.9 + t * 0.0004);
-        var y = r * amp;
-        var sy = horizon + ((cam - y) / z) * ky;
-        var col = Math.max(0, Math.min(occl.length - 1, Math.round(sx / 2)));
-        if (sy >= occl[col] - 0.5) continue;      // hidden behind a nearer ridge
-        occl[col] = sy;
-        var snow = Math.min(1, r * 1.4);            // crests a little brighter
-        var a = 0.08 + 0.2 * fade * fade + 0.24 * snow * (0.4 + 0.6 * back);
-        out.push(sx, sy, Math.min(0.5, a), fade > 0.6 ? 1.5 : 1, (i * 0.61 + j * 1.7) % 6.28);
-      }
-    }
-    return out;
-  }
-
-  function reveal() {
-    var de = document.documentElement;
-    var left = de.scrollHeight - (window.scrollY + window.innerHeight);   // px still below the fold
-    return Math.max(0, Math.min(1, 1 - left / (window.innerHeight * 0.6)));
+  function surface(x, z, t) {
+    return 0.16 * Math.sin(x * 1.4 + t * 0.00018)
+         + 0.10 * Math.sin(z * 1.9 - t * 0.00013)
+         + 0.05 * Math.sin((x + z) * 3.1 + t * 0.00027);
   }
 
   function draw(t) {
@@ -123,16 +70,21 @@
       ctx.fillRect(st[0], st[1], sz, sz);
     }
 
-    // the mountains rise into view only at the very end of the page: over the
-    // last ~60 % of a screen of scrolling they fade in and climb from below
-    var rv = reveal();
-    if (rv > 0.002) {
-      if (!still && t - builtAt > 110) { peaks = buildMountains(t); builtAt = t; }
-      var ease = rv * rv * (3 - 2 * rv), dy = (1 - ease) * H * 0.22;
-      for (var p = 0; p < peaks.length; p += 5) {
-        var al = ease * peaks[p + 2] * (0.9 + 0.1 * Math.sin(peaks[p + 4] + t * 0.0007));
-        ctx.fillStyle = 'rgba(234,230,222,' + al.toFixed(3) + ')';
-        ctx.fillRect(peaks[p], peaks[p + 1] + dy, peaks[p + 3], peaks[p + 3]);
+    // point-cloud terrain, seen from slightly above
+    var horizon = H * 0.56, cam = 0.62, f = Math.min(W, H * 1.6) * 0.55;
+    for (var j = 0; j < NZ; j++) {
+      var z = 1 + j * 0.085;                       // depth 1 .. ~6.4
+      var fade = 1 - j / NZ;
+      var alpha = (0.05 + 0.24 * fade * fade).toFixed(3);
+      ctx.fillStyle = 'rgba(234,230,222,' + alpha + ')';
+      var size = fade > 0.6 ? 1.5 : 1;
+      for (var i = 0; i < NX; i++) {
+        var x = -2.4 + i * (4.8 / NX) + (j % 2) * (2.4 / NX);
+        var y = surface(x, z, t);
+        var sx = W / 2 + (x / z) * f * 1.5;
+        if (sx < -4 || sx > W + 4) continue;
+        var sy = horizon + ((cam - y) / z) * f * 0.62;
+        ctx.fillRect(sx, sy, size, size);
       }
     }
 
@@ -233,12 +185,11 @@
 
   var last = 0, raf;
   function tick(t) {
-    if (t - last > 60) { last = t; draw(t); }     // ~16 frames per second
+    if (t - last > 45) { last = t; draw(t); }     // ~20 frames per second
     if (!document.hidden) raf = requestAnimationFrame(tick);
   }
   resize(); draw(0);
   window.addEventListener('resize', function () { resize(); draw(performance.now()); });
-  window.addEventListener('scroll', function () { if (still || document.hidden) draw(performance.now()); }, { passive: true });
   if (still) return;
   document.addEventListener('visibilitychange', function () { if (!document.hidden) raf = requestAnimationFrame(tick); });
   raf = requestAnimationFrame(tick);
