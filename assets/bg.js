@@ -1,5 +1,5 @@
-/* Kryptos background: a dune field drawn as a 1-bit ordered dither, lit from
-   the side like the statue and drifting slowly, the real sky
+/* Kryptos background: the sea as a topographic plate, contour lines of a slow
+   swell seen in perspective (after the statue's contour variant), the real sky
    above Munich at this moment (921 stars brighter than magnitude 4.5, facing
    south, the horizon on the terrain line), and two thin orbits ornamented like
    an astrolabe, with one verdigris point travelling along them and the Moon in
@@ -42,7 +42,6 @@
     }
     return out;
   }
-  var NZ = 64;
 
   function resize() {
     W = window.innerWidth; H = window.innerHeight;
@@ -60,15 +59,13 @@
     return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
   }
   function surface(x, z, t) {
-    var w = t * 0.000035, m = t * 0.000011;
-    return 0.42 * (vnoise(x * 1.3 + w, z * 0.8 + m) - 0.5)
-         + 0.16 * (vnoise(x * 3.1 - w * 1.7, z * 2.0 + 7.3) - 0.5)
-         + 0.05 * (vnoise(x * 7.3 + 3.1, z * 5.1 - w * 2.3) - 0.5);
+    var w = t * 0.00005;
+    var warp = 0.9 * (vnoise(x * 0.7 + 11.1, z * 0.6 + w * 0.6) - 0.5);       // bends the swell
+    return 0.17 * Math.sin(z * 3.1 - t * 0.00022 + x * 0.45 + warp * 2.6)    // long swell coming in
+         + 0.20 * (vnoise(x * 1.5 + w, z * 1.3 - w * 0.4) - 0.5)
+         + 0.07 * (vnoise(x * 3.8 - w * 1.5, z * 3.2 + 5.7) - 0.5);
   }
-  // 4 × 4 Bayer matrix: the relief is drawn as an ordered dither, like the statue
-  var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-  // light from the upper left and slightly behind, like a museum spotlight
-  var LX = -0.62, LY = 0.62, LZ = 0.48;
+
 
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
@@ -84,37 +81,64 @@
       ctx.fillRect(st[0], st[1], sz, sz);
     }
 
-    // dithered dune field, seen from slightly above. Sampled on a regular screen
-    // grid (one sample every 4 px, rows evenly spaced on screen), so density is
-    // the same near and far; a sample is drawn only where the lit slope beats its
-    // screen-aligned Bayer threshold: valleys go dark, crests catch the light,
-    // and the brightest crests take the accent.
-    var horizon = H * 0.56, cam = 0.62, f = Math.min(W, H * 1.6) * 0.55, e = 0.035;
-    var STEP = 4, kx = f * 1.5, ky = f * 0.62;
-    var cols = Math.ceil(W / STEP) + 2, prev = new Float32Array(cols), zPrev = 0;
-    for (var j = 0; j < NZ; j++) {
-      var z = 1 / (1 - j / (NZ - 1) * (1 - 1 / 6.4));       // even steps of 1/z
-      var fade = 1 - j / NZ;
-      var alpha = 0.07 + 0.33 * fade * fade;
-      var yLeft = 0, xLeft = 0;
-      for (var c = 0; c < cols; c++) {
-        var sx = c * STEP;
-        var x = (sx - W / 2) * z / kx;
-        var y = surface(x, z, t);
-        // slopes from the neighbours already computed (left sample, previous row)
-        var dx = c ? (y - yLeft) / (x - xLeft) : (surface(x + e, z, t) - y) / e;
-        var dz = j ? (y - prev[c]) / (z - zPrev) : (surface(x, z + e, t) - y) / e;
-        yLeft = y; xLeft = x; prev[c] = y;
-        var inv = 1 / Math.sqrt(dx * dx + 1 + dz * dz);
-        var lit = (-dx * LX + LY - dz * LZ) * inv;            // n · L, n = (-dx, 1, -dz)/|n|
-        var v = Math.max(0, Math.min(1, (lit - 0.36) / 0.52)) * (0.5 + 0.5 * fade);
-        if (v * 16 <= BAYER[(c & 3) + ((j & 3) << 2)]) continue;
-        var sy = horizon + ((cam - y) / z) * ky;
-        ctx.fillStyle = v > 0.88 ? 'rgba(121,180,162,' + Math.min(0.8, alpha * 1.7).toFixed(3) + ')'
-                                 : 'rgba(234,230,222,' + alpha.toFixed(3) + ')';
-        ctx.fillRect(sx, sy, fade > 0.55 ? 1.5 : 1, fade > 0.55 ? 1.5 : 1);
+    // the sea as a topographic plate: contour lines of a slowly moving swell,
+    // found with marching squares on a grid laid out evenly on screen
+    // (columns every ~14 px, rows at even steps of 1/z), then drawn in
+    // perspective. Every fifth level is an index contour in the accent.
+    var horizon = H * 0.56, cam = 0.62, f = Math.min(W, H * 1.6) * 0.55;
+    var kx = f * 1.5, ky = f * 0.62;
+    var GX = Math.max(48, Math.round(W / 11)), GZ = 60;
+    var zs = new Float32Array(GZ), hs = new Float32Array(GX * GZ);
+    for (var j = 0; j < GZ; j++) {
+      zs[j] = 1 / (1 - j / (GZ - 1) * (1 - 1 / 6.4));
+      for (var i = 0; i < GX; i++) {
+        var xw = ((i / (GX - 1)) * W * 1.1 - W * 0.05 - W / 2) * zs[j] / kx;
+        hs[j * GX + i] = surface(xw, zs[j], t);
       }
-      zPrev = z;
+    }
+    var BANDS = 4, LEVELS = [];
+    for (var L = -0.36; L <= 0.361; L += 0.024) LEVELS.push(L);
+    var paths = [];                                  // paths[band][level] -> flat list of segments
+    for (var bnd = 0; bnd < BANDS; bnd++) { paths.push([]); for (var q = 0; q < LEVELS.length; q++) paths[bnd].push([]); }
+    function project(i, j, lvl) {                    // fractional grid coords -> screen
+      var i0 = Math.floor(i), j0 = Math.floor(j), fi = i - i0, fj = j - j0;
+      var z = zs[j0] + (zs[Math.min(GZ - 1, j0 + 1)] - zs[j0]) * fj;
+      var x = ((i / (GX - 1)) * W * 1.1 - W * 0.05 - W / 2) * z / kx;
+      return [W / 2 + (x / z) * kx, horizon + ((cam - lvl) / z) * ky];
+    }
+    for (var j = 0; j < GZ - 1; j++) {
+      var band = Math.min(BANDS - 1, Math.floor(j / (GZ - 1) * BANDS));
+      for (var i = 0; i < GX - 1; i++) {
+        var a0 = hs[j * GX + i], a1 = hs[j * GX + i + 1], a2 = hs[(j + 1) * GX + i + 1], a3 = hs[(j + 1) * GX + i];
+        for (var q = 0; q < LEVELS.length; q++) {
+          var lv = LEVELS[q];
+          var cs = (a0 > lv ? 1 : 0) | (a1 > lv ? 2 : 0) | (a2 > lv ? 4 : 0) | (a3 > lv ? 8 : 0);
+          if (cs === 0 || cs === 15) continue;
+          var e = [];                                // crossing points on the 4 edges
+          if ((cs & 1) !== ((cs >> 1) & 1)) e.push([i + (lv - a0) / (a1 - a0), j]);
+          if (((cs >> 1) & 1) !== ((cs >> 2) & 1)) e.push([i + 1, j + (lv - a1) / (a2 - a1)]);
+          if (((cs >> 2) & 1) !== ((cs >> 3) & 1)) e.push([i + (lv - a3) / (a2 - a3), j + 1]);
+          if (((cs >> 3) & 1) !== (cs & 1)) e.push([i, j + (lv - a0) / (a3 - a0)]);
+          for (var k = 0; k + 1 < e.length; k += 2) {
+            var p0 = project(e[k][0], e[k][1], lv), p1 = project(e[k + 1][0], e[k + 1][1], lv);
+            paths[band][q].push(p0[0], p0[1], p1[0], p1[1]);
+          }
+        }
+      }
+    }
+    ctx.lineWidth = 1;
+    for (var bnd = 0; bnd < BANDS; bnd++) {
+      var near = 1 - bnd / BANDS;                    // band 0 is nearest
+      for (var q = 0; q < LEVELS.length; q++) {
+        var seg = paths[bnd][q];
+        if (!seg.length) continue;
+        var index = q % 5 === 0;
+        ctx.strokeStyle = index ? 'rgba(121,180,162,' + (0.10 + 0.22 * near).toFixed(3) + ')'
+                                : 'rgba(234,230,222,' + (0.035 + 0.11 * near).toFixed(3) + ')';
+        ctx.beginPath();
+        for (var m = 0; m < seg.length; m += 4) { ctx.moveTo(seg[m], seg[m + 1]); ctx.lineTo(seg[m + 2], seg[m + 3]); }
+        ctx.stroke();
+      }
     }
 
     // two thin orbits and a travelling point
@@ -214,7 +238,7 @@
 
   var last = 0, raf;
   function tick(t) {
-    if (t - last > 70) { last = t; draw(t); }     // ~14 frames per second: the dunes move slowly
+    if (t - last > 60) { last = t; draw(t); }     // ~16 frames per second: the swell moves slowly
     if (!document.hidden) raf = requestAnimationFrame(tick);
   }
   resize(); draw(0);
