@@ -1,4 +1,5 @@
-/* Kryptos background: a point-cloud terrain that breathes slowly, the real sky
+/* Kryptos background: a dune field drawn as a 1-bit ordered dither, lit from
+   the side like the statue and drifting slowly, the real sky
    above Munich at this moment (921 stars brighter than magnitude 4.5, facing
    south, the horizon on the terrain line), and two thin orbits ornamented like
    an astrolabe, with one verdigris point travelling along them and the Moon in
@@ -41,7 +42,7 @@
     }
     return out;
   }
-  var NX = 150, NZ = 64;
+  var NZ = 64;
 
   function resize() {
     W = window.innerWidth; H = window.innerHeight;
@@ -50,11 +51,24 @@
     sky = computeSky(Date.now()); skyAt = Date.now();
   }
 
-  function surface(x, z, t) {
-    return 0.16 * Math.sin(x * 1.4 + t * 0.00018)
-         + 0.10 * Math.sin(z * 1.9 - t * 0.00013)
-         + 0.05 * Math.sin((x + z) * 3.1 + t * 0.00027);
+  // Dunes: smooth value noise (3 octaves) drifting slowly, like sand in wind.
+  function hash(ix, iz) { var h = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453; return h - Math.floor(h); }
+  function vnoise(x, z) {
+    var ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
+    var ux = fx * fx * (3 - 2 * fx), uz = fz * fz * (3 - 2 * fz);
+    var a = hash(ix, iz), b = hash(ix + 1, iz), c = hash(ix, iz + 1), d = hash(ix + 1, iz + 1);
+    return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
   }
+  function surface(x, z, t) {
+    var w = t * 0.000035, m = t * 0.000011;
+    return 0.42 * (vnoise(x * 1.3 + w, z * 0.8 + m) - 0.5)
+         + 0.16 * (vnoise(x * 3.1 - w * 1.7, z * 2.0 + 7.3) - 0.5)
+         + 0.05 * (vnoise(x * 7.3 + 3.1, z * 5.1 - w * 2.3) - 0.5);
+  }
+  // 4 × 4 Bayer matrix: the relief is drawn as an ordered dither, like the statue
+  var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  // light from the upper left and slightly behind, like a museum spotlight
+  var LX = -0.62, LY = 0.62, LZ = 0.48;
 
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
@@ -70,22 +84,37 @@
       ctx.fillRect(st[0], st[1], sz, sz);
     }
 
-    // point-cloud terrain, seen from slightly above
-    var horizon = H * 0.56, cam = 0.62, f = Math.min(W, H * 1.6) * 0.55;
+    // dithered dune field, seen from slightly above. Sampled on a regular screen
+    // grid (one sample every 4 px, rows evenly spaced on screen), so density is
+    // the same near and far; a sample is drawn only where the lit slope beats its
+    // screen-aligned Bayer threshold: valleys go dark, crests catch the light,
+    // and the brightest crests take the accent.
+    var horizon = H * 0.56, cam = 0.62, f = Math.min(W, H * 1.6) * 0.55, e = 0.035;
+    var STEP = 4, kx = f * 1.5, ky = f * 0.62;
+    var cols = Math.ceil(W / STEP) + 2, prev = new Float32Array(cols), zPrev = 0;
     for (var j = 0; j < NZ; j++) {
-      var z = 1 + j * 0.085;                       // depth 1 .. ~6.4
+      var z = 1 / (1 - j / (NZ - 1) * (1 - 1 / 6.4));       // even steps of 1/z
       var fade = 1 - j / NZ;
-      var alpha = (0.05 + 0.24 * fade * fade).toFixed(3);
-      ctx.fillStyle = 'rgba(234,230,222,' + alpha + ')';
-      var size = fade > 0.6 ? 1.5 : 1;
-      for (var i = 0; i < NX; i++) {
-        var x = -2.4 + i * (4.8 / NX) + (j % 2) * (2.4 / NX);
+      var alpha = 0.07 + 0.33 * fade * fade;
+      var yLeft = 0, xLeft = 0;
+      for (var c = 0; c < cols; c++) {
+        var sx = c * STEP;
+        var x = (sx - W / 2) * z / kx;
         var y = surface(x, z, t);
-        var sx = W / 2 + (x / z) * f * 1.5;
-        if (sx < -4 || sx > W + 4) continue;
-        var sy = horizon + ((cam - y) / z) * f * 0.62;
-        ctx.fillRect(sx, sy, size, size);
+        // slopes from the neighbours already computed (left sample, previous row)
+        var dx = c ? (y - yLeft) / (x - xLeft) : (surface(x + e, z, t) - y) / e;
+        var dz = j ? (y - prev[c]) / (z - zPrev) : (surface(x, z + e, t) - y) / e;
+        yLeft = y; xLeft = x; prev[c] = y;
+        var inv = 1 / Math.sqrt(dx * dx + 1 + dz * dz);
+        var lit = (-dx * LX + LY - dz * LZ) * inv;            // n · L, n = (-dx, 1, -dz)/|n|
+        var v = Math.max(0, Math.min(1, (lit - 0.36) / 0.52)) * (0.5 + 0.5 * fade);
+        if (v * 16 <= BAYER[(c & 3) + ((j & 3) << 2)]) continue;
+        var sy = horizon + ((cam - y) / z) * ky;
+        ctx.fillStyle = v > 0.88 ? 'rgba(121,180,162,' + Math.min(0.8, alpha * 1.7).toFixed(3) + ')'
+                                 : 'rgba(234,230,222,' + alpha.toFixed(3) + ')';
+        ctx.fillRect(sx, sy, fade > 0.55 ? 1.5 : 1, fade > 0.55 ? 1.5 : 1);
       }
+      zPrev = z;
     }
 
     // two thin orbits and a travelling point
@@ -185,7 +214,7 @@
 
   var last = 0, raf;
   function tick(t) {
-    if (t - last > 45) { last = t; draw(t); }     // ~20 frames per second
+    if (t - last > 70) { last = t; draw(t); }     // ~14 frames per second: the dunes move slowly
     if (!document.hidden) raf = requestAnimationFrame(tick);
   }
   resize(); draw(0);
