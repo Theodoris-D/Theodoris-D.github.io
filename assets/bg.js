@@ -1,5 +1,6 @@
-/* Kryptos background: a still mountain range drawn as a point cloud along the
-   bottom of the page (nearer ridges hide farther ones), the real sky above
+/* Kryptos background: a still mountain range drawn as a point cloud, which
+   rises into view only when the reader reaches the end of the page (nearer
+   ridges hide farther ones), the real sky above
    Munich at this moment (921 stars brighter than magnitude 4.5, facing south,
    the horizon on the mountains' foot), and two thin orbits ornamented like
    an astrolabe, with one verdigris point travelling along them and the Moon in
@@ -97,6 +98,12 @@
     return out;
   }
 
+  function reveal() {
+    var de = document.documentElement;
+    var left = de.scrollHeight - (window.scrollY + window.innerHeight);   // px still below the fold
+    return Math.max(0, Math.min(1, 1 - left / (window.innerHeight * 0.6)));
+  }
+
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
 
@@ -111,11 +118,16 @@
       ctx.fillRect(st[0], st[1], sz, sz);
     }
 
-    // the mountains (precomputed on resize; only a faint shimmer moves)
-    for (var p = 0; p < peaks.length; p += 5) {
-      var al = peaks[p + 2] * (0.9 + 0.1 * Math.sin(peaks[p + 4] + t * 0.0007));
-      ctx.fillStyle = 'rgba(234,230,222,' + al.toFixed(3) + ')';
-      ctx.fillRect(peaks[p], peaks[p + 1], peaks[p + 3], peaks[p + 3]);
+    // the mountains rise into view only at the very end of the page: over the
+    // last ~60 % of a screen of scrolling they fade in and climb from below
+    var rv = reveal();
+    if (rv > 0.002) {
+      var ease = rv * rv * (3 - 2 * rv), dy = (1 - ease) * H * 0.22;
+      for (var p = 0; p < peaks.length; p += 5) {
+        var al = ease * peaks[p + 2] * (0.9 + 0.1 * Math.sin(peaks[p + 4] + t * 0.0007));
+        ctx.fillStyle = 'rgba(234,230,222,' + al.toFixed(3) + ')';
+        ctx.fillRect(peaks[p], peaks[p + 1] + dy, peaks[p + 3], peaks[p + 3]);
+      }
     }
 
     // two thin orbits and a travelling point
@@ -220,6 +232,7 @@
   }
   resize(); draw(0);
   window.addEventListener('resize', function () { resize(); draw(performance.now()); });
+  window.addEventListener('scroll', function () { if (still || document.hidden) draw(performance.now()); }, { passive: true });
   if (still) return;
   document.addEventListener('visibilitychange', function () { if (!document.hidden) raf = requestAnimationFrame(tick); });
   raf = requestAnimationFrame(tick);
