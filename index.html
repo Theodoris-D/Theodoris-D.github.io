@@ -57,6 +57,7 @@
 <div class="hero-grid fit-unit">
 <div class="stack">
 <p class="kicker">Security · Cryptography · AI</p>
+<p class="note">Θ, in the logo: the initial of Θεόδωρος, and Θ(n), the notation for a tight bound in complexity.</p>
 <h1 id="name">Theodoris<br>Donval</h1>
 <p class="intro">Engineering student at EURECOM (cybersecurity major), on exchange at TUM in Munich.</p>
 <p class="status"><span class="diamond" aria-hidden="true"></span><span>Open to a 24-week internship · March 2027 · Munich · English</span></p>
@@ -67,6 +68,7 @@
 <blockquote class="epigraph">
 <p lang="grc">φύσις κρύπτεσθαι φιλεῖ</p>
 <footer>Heraclitus, fragment B123 — “nature loves to hide”</footer>
+<p class="note">κρύπτω, “I hide”, is the root of crypto-. Hadot read this fragment as the theme of a whole tradition: Le Voile d’Isis (2004).</p>
 </blockquote>
 </div>
 
@@ -75,6 +77,7 @@
 <figcaption>
 <span>Fig. α — Head of Hygieia, marble. 3D scan, 1-bit render.</span>
 <span>sha256("φύσις κρύπτεσθαι φιλεῖ") = fbd3b729 4d2710f5 fc83afda 343985c6 1bbf58c3 989013ff 3a674bd6 a1cf7cb6</span>
+<span class="note">The hash is real: <code>printf 'φύσις κρύπτεσθαι φιλεῖ' | sha256sum</code>. It is also the AES-256 key that decrypted the statue as the page loaded, one 16 × 8-pixel tile (128 bits, one AES block) at a time.</span>
 </figcaption>
 </figure>
 </div>
@@ -84,6 +87,7 @@
 <div class="section-head">
 <h2 id="work-title"><span class="n" aria-hidden="true">αʹ</span>Work</h2>
 <p>3 projects · 1 research internship · each with its own case study</p>
+<p class="note">αʹ βʹ γʹ δʹ are 1, 2, 3, 4 in Greek numerals; Α Β Γ Δ number the projects the same way.</p>
 </div>
 <div class="cards">
 <article class="card">
@@ -154,6 +158,7 @@
 <p class="kicker"><span class="accent grc" aria-hidden="true" style="font-family: var(--serif); font-size: 20px; letter-spacing: 0; text-transform: none;">δʹ</span>&nbsp; Contact</p>
 <h2 id="contact-title">From March 2027, in Munich.</h2>
 <p>A 24-week, full-time internship, in English, open to any team or topic.</p>
+<p class="note" style="align-self: center;">Behind this page: the real sky above Munich at this moment, facing south, horizon on the line of dots; on the circle, the Moon in its real phase (new at the top, full at the bottom).</p>
 <div class="actions">
 <a class="btn solid" href="mailto:theodorisdonval@gmail.com">Email ↗</a>
 <a class="btn" href="https://www.linkedin.com/in/theodoris-donval">LinkedIn ↗</a>
@@ -169,9 +174,14 @@
 <span>Θ · Theodoris Donval · Munich, 2026</span>
 <span>For agents: <a href="llms.txt">/llms.txt</a> · <a href="index.md">this page as Markdown</a></span>
 <span class="grc" lang="grc">μηδὲν ἄγαν</span>
+<span class="adyton"><span class="grc" lang="grc" style="font-family: var(--serif); font-size: 15px; color: var(--marble);">ἄδυτον</span><code>187da8ad85969f848e2025d5794dd8b0f4e8fc</code><span>AES-256-CTR · IV 0 · κλείς: sha256 of the other maxim of Delphi</span></span>
+<button type="button" class="initiates-toggle" data-initiates-toggle aria-pressed="false">Θ · reveal the hidden layer</button>
+<p class="note">μηδὲν ἄγαν, “nothing in excess”, was carved at Delphi. In security it has a name: least privilege. The ἄδυτον was the inner room of a temple, closed to the uninitiated.</p>
 </div>
 </footer>
 <script src="assets/bg.js" defer></script>
 <script src="assets/fit.js" defer></script>
+<script src="assets/decrypt.js" defer></script>
+<script src="assets/oracle.js" defer></script>
 </body>
 </html>

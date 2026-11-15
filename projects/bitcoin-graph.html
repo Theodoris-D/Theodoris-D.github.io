@@ -47,6 +47,12 @@
 <p class="kicker">Jun – Jul 2025 · Research internship · Inria</p>
 <h1 id="title">Bitcoin transaction graph</h1>
 <p class="lede">Bitcoin’s ledger is public, but its users are pseudonymous and change addresses all the time. Around a set of addresses already flagged as illicit, I built and validated the pipeline that extracts their transaction neighbourhood, then tested whether graph structure alone could group addresses by owner. It could not, and showing why set the team’s next direction.</p>
+<blockquote class="epi">
+<p class="epi-grc" lang="grc">ὁδὸς ἄνω κάτω μία καὶ ὡυτή.</p>
+<p class="epi-en">“The road up and the road down is one and the same.”</p>
+<footer>Heraclitus, fragment B60 (Diels–Kranz)</footer>
+<p class="note">The subgraph keeps every address within two hops whether the money flows in or out, and spectral clustering then treats the graph as undirected: paying and being paid become one road.</p>
+</blockquote>
 </div>
 <dl class="meta">
 <dt>Where</dt><dd>Inria centre at Université Côte d’Azur, DIANA project-team, Sophia Antipolis</dd>
@@ -240,8 +246,10 @@
 <span>Θ · Theodoris Donval · Munich, 2026</span>
 <span>For agents: <a href="../llms.txt">/llms.txt</a> · <a href="bitcoin-graph.md">this page as Markdown</a></span>
 <span class="grc" lang="grc">μηδὲν ἄγαν</span>
+<button type="button" class="initiates-toggle" data-initiates-toggle aria-pressed="false">Θ · reveal the hidden layer</button>
 </div>
 </footer>
 <script src="../assets/bg.js" defer></script>
+<script src="../assets/oracle.js" defer></script>
 </body>
 </html>

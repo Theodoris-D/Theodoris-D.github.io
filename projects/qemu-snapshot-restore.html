@@ -47,6 +47,12 @@
 <p class="kicker">Spring 2026 · Semester project · EURECOM</p>
 <h1 id="title">QEMU snapshot restore</h1>
 <p class="lede">A fuzzer that tests a whole virtual machine has to put it back in the same state after every input. We built a harness that drives a QEMU guest entirely from the host and measured five ways of restoring a snapshot, from full reload to copy-on-write, to find which one gives the most test cases per second, and when.</p>
+<blockquote class="epi">
+<p class="epi-grc" lang="grc">ποταμοῖσι τοῖσιν αὐτοῖσιν ἐμβαίνουσιν ἕτερα καὶ ἕτερα ὕδατα ἐπιρρεῖ.</p>
+<p class="epi-en">“Upon those who step into the same rivers, different and again different waters flow.”</p>
+<footer>Heraclitus, fragment B12 (Diels–Kranz)</footer>
+<p class="note">B12 is held to be closer to Heraclitus’ own words than the famous “you cannot step twice into the same river” (B91, through Plato). Snapshot fuzzing wants exactly what he denies: the same river every time. A restore makes the waters the same again, and its cost is how much water has changed.</p>
+</blockquote>
 </div>
 <dl class="meta">
 <dt>Team</dt><dd>With Frédéric Kah (2 students)</dd>
@@ -263,8 +269,10 @@
 <span>Θ · Theodoris Donval · Munich, 2026</span>
 <span>For agents: <a href="../llms.txt">/llms.txt</a> · <a href="qemu-snapshot-restore.md">this page as Markdown</a></span>
 <span class="grc" lang="grc">μηδὲν ἄγαν</span>
+<button type="button" class="initiates-toggle" data-initiates-toggle aria-pressed="false">Θ · reveal the hidden layer</button>
 </div>
 </footer>
 <script src="../assets/bg.js" defer></script>
+<script src="../assets/oracle.js" defer></script>
 </body>
 </html>

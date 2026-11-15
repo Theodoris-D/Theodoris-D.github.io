@@ -141,4 +141,5 @@
   maybe();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { lastW = 0; maybe(); });
   window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(maybe, 120); });
+  window.addEventListener('fit:relayout', function () { lastW = 0; maybe(); });
 })();

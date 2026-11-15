@@ -48,6 +48,12 @@
 <p class="kicker">Fall 2025 · Research project · EURECOM</p>
 <h1 id="title">Verifiable secure aggregation</h1>
 <p class="lede">In federated learning, a server adds up the model updates of many users. Here the server never sees a single update, only their sum, and it cannot lie about that sum: anyone holding the public verification key can check it with two sides of a pairing equation.</p>
+<blockquote class="epi">
+<p class="epi-grc" lang="grc">ὁ ἄναξ οὗ τὸ μαντεῖόν ἐστι τὸ ἐν Δελφοῖς οὔτε λέγει οὔτε κρύπτει ἀλλὰ σημαίνει.</p>
+<p class="epi-en">“The lord whose oracle is at Delphi neither speaks nor conceals, but gives a sign.”</p>
+<footer>Heraclitus, fragment B93 (Diels–Kranz)</footer>
+<p class="note">The aggregator neither reveals anyone’s data nor hides the result: it gives a sign, the aggregate tag, that anyone can check with a pairing.</p>
+</blockquote>
 </div>
 <dl class="meta">
 <dt>Supervision</dt><dd>Prof. Melek Önen &amp; Prof. Antonio Faonio, EURECOM</dd>
@@ -381,8 +387,10 @@ x_k     = DLP(V_k)                   <span class="cm">// 2¹⁶-entry table</spa
 <span>Θ · Theodoris Donval · Munich, 2026</span>
 <span>For agents: <a href="../llms.txt">/llms.txt</a> · <a href="verifiable-aggregation.md">this page as Markdown</a></span>
 <span class="grc" lang="grc">μηδὲν ἄγαν</span>
+<button type="button" class="initiates-toggle" data-initiates-toggle aria-pressed="false">Θ · reveal the hidden layer</button>
 </div>
 </footer>
 <script src="../assets/bg.js" defer></script>
+<script src="../assets/oracle.js" defer></script>
 </body>
 </html>

@@ -49,6 +49,12 @@
 <p class="kicker">Nov 2026 · Solo project · Python, C</p>
 <h1 id="title">Crash-Triage Agent</h1>
 <p class="lede">A program crashes on some input. An LLM agent drives GDB and AddressSanitizer through an MCP server, reads the source, names the root cause and the CWE, writes a patch, and proves the patch works by recompiling and re-running it. It does all this while reading text an attacker may control.</p>
+<blockquote class="epi">
+<p class="epi-grc" lang="grc">ἁρμονίη ἀφανὴς φανερῆς κρείττων.</p>
+<p class="epi-en">“An unapparent harmony is stronger than an apparent one.”</p>
+<footer>Heraclitus, fragment B54 (Diels–Kranz)</footer>
+<p class="note">A sanitizer reports where the program died, not why. The cause usually hides a line earlier: each CWE the agent missed was a symptom taken for its cause.</p>
+</blockquote>
 </div>
 <dl class="meta">
 <dt>Role</dt><dd>Design, implementation, evaluation</dd>
@@ -369,8 +375,10 @@ triage triage c02              --attack beacon_exfil:source_comment</pre>
 <span>Θ · Theodoris Donval · Munich, 2026</span>
 <span>For agents: <a href="../llms.txt">/llms.txt</a> · <a href="crash-triage-agent.md">this page as Markdown</a></span>
 <span class="grc" lang="grc">μηδὲν ἄγαν</span>
+<button type="button" class="initiates-toggle" data-initiates-toggle aria-pressed="false">Θ · reveal the hidden layer</button>
 </div>
 </footer>
 <script src="../assets/bg.js" defer></script>
+<script src="../assets/oracle.js" defer></script>
 </body>
 </html>
