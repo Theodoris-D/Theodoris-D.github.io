@@ -1,9 +1,9 @@
 # Theodoris Donval
-Engineering student, cybersecurity major (EURECOM), on exchange at TUM.
+Engineering student at EURECOM, on exchange at TUM.
 
 - Status: open to a 24-week full-time internship (Pflichtpraktikum) from March 2027, Munich, in English, in any team or topic.
 - Now: exchange semester in Informatics (Master's courses), TUM, Oct 2026 – Mar 2027.
-- Degree: Diplôme d'Ingénieur (Master's in Computer Science), EURECOM, cybersecurity major, 2024 – 2027.
+- Degree: Diplôme d'Ingénieur (Master's in Computer Science), EURECOM, 2024 – 2027.
 
 ## Work
 

@@ -2,14 +2,14 @@
 
 2024 – 2027 · Engineering school · Sophia Antipolis
 
-The engineering degree (Master’s in Computer Science) at EURECOM, a graduate school in digital sciences. A first year of broad foundations, then the cybersecurity major: systems, networks, cryptography and machine learning.
+The engineering degree (Master’s in Computer Science) at EURECOM, a graduate school in digital sciences. A first year of broad foundations, then specialised courses in systems, networks, cryptography and machine learning.
 
-- Degree: Diplôme d’Ingénieur (Master’s degree in Computer Science), cybersecurity major
+- Degree: Diplôme d’Ingénieur (Master’s degree in Computer Science)
 - Years: 2024 – 2027; exchange at TUM in 2026/27
 - Language: English and French
 - Course pages: eurecom.fr/en/teaching ↗
 
-## Spring 2026 (Cybersecurity major · 30 ECTS)
+## Spring 2026 (30 ECTS)
 
 ### Advanced Statistical Inference (ASI) — Spring 2026, Lectures + Python labs
 Learning seen as probabilistic modelling of data, so that many classical methods become special cases of inference in more general models, with a focus on quantifying uncertainty.
@@ -77,7 +77,7 @@ Project-management concepts and techniques following the PMI areas, practised on
 - Communication and organisation
 - Risk
 
-## Fall 2025 (Cybersecurity major · 30 ECTS)
+## Fall 2025 (30 ECTS)
 
 ### System and Network Security (SysSec) — Fall 2025, Capture-the-flag homework
 A practice-oriented course on real attacks and their countermeasures across operating systems, networks and the web, taught to make students think like attackers. Homework takes the form of CTF challenges.
