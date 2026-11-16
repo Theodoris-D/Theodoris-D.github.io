@@ -40,7 +40,7 @@ Course lists with programmes: [TUM](education/tum.md) · [EURECOM](education/eur
 ## Skills
 - Code: Python, Rust, C, C++, OCaml, JavaScript/TypeScript, Bash, MATLAB, SQL (basics)
 - AI: agents (MCP, tool calling), RAG, LLM evaluation, root-cause analysis, prompt-injection defences
-- ML & data: deep learning, computer vision, clustering; PyTorch, Hugging Face, scikit-learn, Pandas, Excel
+- ML & data: deep learning, NLP, computer vision, clustering; PyTorch, Hugging Face, scikit-learn, Pandas, Excel
 - Mathematics: linear algebra, probability and statistics, optimisation
 - Systems & security: Linux, Git, Docker, GDB, AddressSanitizer, pairing-based cryptography
 - Languages: French (native), English (bilingual, TOEIC 990/990), Greek (spoken), German (A1)
