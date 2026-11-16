@@ -11,6 +11,7 @@ Engineering student at EURECOM, on exchange at TUM.
 LLM agent driving GDB and AddressSanitizer through an 8-tool MCP server: root cause, CWE, patch, verification by recompiling and re-running.
 - Result: 23/24 patches stop the crash and pass functional tests over two runs (12/12, then 11/12; 12-case C benchmark, Claude Haiku 5.5); non-LLM baseline: 0/12.
 - Prompt injection on the real model: 0/27 attacks succeeded with defences off and on (cases c01–c03); the payloads are too easy for this model, so the defences' effect is not measured.
+- Retrieval: hybrid BM25 + bge-small embeddings (ChromaDB) lifts CWE lookup top-1 from 52 % to 61 % on 288 NVD CVEs, but end-to-end CWE naming barely moves (18 → 19/24).
 - Limits: CWE naming 9/12, only ties a sanitizer parser; patch quality beyond the tests not assessed; defences' effect not measurable with current payloads.
 - Code: https://github.com/Theodoris-D/crash-triage-agent
 
@@ -37,10 +38,11 @@ Course lists with programmes: [TUM](education/tum.md) · [EURECOM](education/eur
 - CPGE MP2I/MPI, Lycée Clemenceau, Nantes, 2022 – 2024.
 
 ## Skills
-- Code: Python, Rust, C, OCaml, SQL (basics)
-- AI: agents (MCP, tool calling), LLM evaluation, prompt-injection defences
-- ML & data: PyTorch, scikit-learn, NumPy, Pandas, Numba, NetworkX
-- Systems & security: Linux, Git, GDB, AddressSanitizer, pairing-based cryptography
+- Code: Python, Rust, C, C++, OCaml, JavaScript/TypeScript, Bash, MATLAB, SQL (basics)
+- AI: agents (MCP, tool calling), RAG, LLM evaluation, root-cause analysis, prompt-injection defences
+- ML & data: deep learning, computer vision, clustering; PyTorch, Hugging Face, scikit-learn, Pandas, Excel
+- Mathematics: linear algebra, probability and statistics, optimisation
+- Systems & security: Linux, Git, Docker, GDB, AddressSanitizer, pairing-based cryptography
 - Languages: French (native), English (bilingual, TOEIC 990/990), Greek (spoken), German (A1)
 
 ## Contact

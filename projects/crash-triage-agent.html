@@ -255,6 +255,23 @@
 <caption>The three CWE misses name the symptom (a stack overflow, CWE-121/124) instead of the cause (off-by-one, sign conversion, unchecked index). A sanitizer sees the same symptom, which is why the parser makes the same mistakes.</caption>
 </table>
 </div>
+
+<h3>CWE retrieval: does a better lookup help?</h3>
+<p>The <code>cwe_lookup</code> tool started as keyword overlap over 18 hand-written CWE entries. Offline, without a model, I compared it with BM25, three Hugging Face embedding models in ChromaDB, a BM25 + bge-small hybrid (reciprocal-rank fusion) and a cross-encoder reranker, on 288 real NVD CVE descriptions and on the 24 diagnoses the agent wrote, with every literal CWE id removed.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Top-1 CWE (18 curated entries)</th><th>NVD, n = 288</th><th>Agent diagnoses, n = 24</th></tr></thead>
+<tbody>
+<tr><td>keyword (old tool)</td><td class="m">151 · 52 % [47, 58]</td><td class="m">17</td></tr>
+<tr><td>BM25</td><td class="m">145 · 50 % [45, 56]</td><td class="m">22</td></tr>
+<tr><td>bge-small-en-v1.5</td><td class="m">166 · 58 % [52, 63]</td><td class="m">22</td></tr>
+<tr><td>hybrid BM25 + bge-small</td><td class="m yes">175 · 61 % [55, 66], McNemar p = 0.006</td><td class="m yes">23</td></tr>
+<tr><td>bge-small + bge-reranker-base</td><td class="m">215 · 75 % [69, 79]</td><td class="m no">6</td></tr>
+</tbody>
+<caption>Indexing the full MITRE catalogue (956 weaknesses) made every retriever worse. The reranker leads on short CVE texts and collapses on the agent's longer ones (not explained). The hybrid was selected on these same sets, so the NVD figure is the one to trust.</caption>
+</table>
+</div>
+<p>Then the end-to-end check: two real runs with the hybrid (Haiku 5.5, about $0.04 each) name the CWE correctly 19/24 times, against 18/24 with keywords. A better component did not make a better system: the three misses are never a lookup failure, the agent picks the consequence (stack overflow) over the root cause (off-by-one, sign conversion, unchecked index). The next lever is a rule that asks for the root-cause weakness, not more retrieval.</p>
 </section>
 
 <section class="chapter" aria-labelledby="c4">

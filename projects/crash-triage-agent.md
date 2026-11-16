@@ -16,6 +16,13 @@ Second run (20261115-214207-6c443d): fix verified 11/12 (c09 failed), crash clas
 
 Brackets: 95 % Wilson intervals. The agent ties the parser on classification; its only advantage is verified repair.
 
+## CWE retrieval (keyword vs BM25 vs Hugging Face embeddings)
+Offline, no model: 288 NVD CVE descriptions and the agent's 24 diagnoses, CWE ids removed; 18 curated entries.
+- Top-1 on NVD: keyword 52 % (151/288), BM25 50 %, bge-small 58 %, hybrid BM25 + bge-small (ChromaDB) 61 % (175/288, McNemar p = 0.006), bge-reranker 75 %.
+- Agent diagnoses: keyword 17/24, hybrid 23/24 (selected on this set: optimistic), reranker 6/24.
+- Full MITRE catalogue (956 entries) makes every retriever worse.
+- End to end (two real runs with the hybrid): CWE exact 19/24 vs 18/24 with keywords. The misses name the consequence, not the root cause; retrieval is not the bottleneck.
+
 ## Method
 - De-leaked benchmark: neutral ids, no CWE hints in the sources.
 - The agent is not given the crashing input; the baseline is.
